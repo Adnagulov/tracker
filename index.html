@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Личный трекер</title>
+  <style>
+    :root{
+      --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb;
+      --accent:#22c55e; --accent2:#3b82f6; --warn:#f59e0b; --danger:#ef4444; --border:#1f2937;
+    }
+    [data-theme="light"]{ --bg:#f7fafc; --card:#fff; --muted:#4b5563; --text:#0f172a; --accent:#16a34a; --accent2:#2563eb; --warn:#d97706; --danger:#dc2626; --border:#e5e7eb; }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Inter,Arial,sans-serif}
+    header{position:sticky;top:0;background:linear-gradient(180deg,rgba(15,23,42,.95),rgba(15,23,42,.7));backdrop-filter:blur(8px);z-index:10;border-bottom:1px solid var(--border)}
+    [data-theme="light"] header{background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(255,255,255,.8))}
+    .wrap{max-width:980px;margin:0 auto;padding:16px}
+    h1{margin:0 0 4px;font-size:22px}
+    .sub{color:var(--muted);font-size:13px}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+    .tab{flex:1;min-width:100px;text-align:center;padding:12px 10px;border:1px solid var(--border);border-radius:12px;background:var(--card);cursor:pointer;color:var(--text);font-weight:600}
+    .tab.active{outline:2px solid var(--accent2)}
+    .grid{display:grid;grid-template-columns:110px 1fr 44px;gap:8px;align-items:center}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;margin:12px 0}
+    .row{display:contents}
+    .time{font-variant-numeric:tabular-nums;color:var(--muted)}
+    .label{font-size:15px}
+    input[type="checkbox"]{width:28px;height:28px}
+    input[type="number"], input[type="time"], input[type="email"]{font-size:16px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text);width:100%;max-width:140px}
+    .muted{color:var(--muted)}
+    .chips{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{padding:8px 10px;border:1px solid var(--border);border-radius:999px;background:#0b1222;color:var(--text);cursor:pointer;font-size:13px}
+    [data-theme="light"] .chip{background:#eef2ff}
+    .chip.active{outline:2px solid var(--accent2);}
+    
+    .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);padding:6px 10px;border-radius:999px;background:#0b1024;font-size:12px}
+    [data-theme="light"] .pill{background:#f1f5f9}
+    .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:#0b1222;color:var(--text)!important;cursor:pointer;font-weight:600}
+    .btn.primary{background:var(--accent2); color:#fff;} .btn:disabled{opacity:.55;color:var(--text)!important}
+    .btn.warn{background:var(--warn); color:#000;}
+    .btn.danger{background:var(--danger); color:#fff;}
+    .kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .kpi .card{padding:14px}
+    .big{font-size:22px;font-weight:700}
+    progress{width:100%;height:14px}
+    footer.sticky{position:sticky;bottom:0;background:linear-gradient(0deg,rgba(15,23,42,.95),rgba(15,23,42,.7));backdrop-filter:blur(8px);border-top:1px solid var(--border)}
+    [data-theme="light"] footer.sticky{background:linear-gradient(0deg,rgba(255,255,255,.95),rgba(255,255,255,.8))}
+    .small{font-size:12px}
+    .right{margin-left:auto}
+    @media(max-width:560px){
+      .wrap{padding:12px}
+      h1{font-size:20px}
+      .grid{grid-template-columns:88px 1fr 36px; gap:6px}
+      .tab{min-width:84px; padding:8px 10px; font-size:12px}
+      .btn{padding:8px 10px}
+      input[type="number"], input[type="time"], input[type="email"]{max-width:110px}
+      .kpi{grid-template-columns:1fr 1fr}
+    }
+  </style>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // TODO: вставь свои значения
+    const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
+    const SUPABASE_ANON_KEY = "YOUR_ANON_PUBLIC_KEY";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="flex" style="align-items:flex-start;justify-content:space-between;">
+        <div>
+          <h1>📅 Личный трекер</h1>
+          <div class="sub" id="dateLine">—</div>
+          <div class="flex" style="margin-top:10px">
+            <span class="pill" id="sportPill">Спорт дня: —</span>
+            <span class="pill" id="sleepPill">Сон: 22:30 → 06:00 (≈7–8 ч)</span>
+            <span class="pill">Цель веса: 80 кг</span>
+          </div>
+        </div>
+        <div class="flex right">
+          <button class="btn" id="themeBtn">🌙/☀️</button>
+          <button class="btn" id="settingsBtn">⚙️</button>
+          <button class="btn" id="exportBtn">Экспорт</button>
+          <label class="btn" for="importInput">Импорт<input id="importInput" type="file" accept="application/json" hidden></label>
+          <button class="btn warn" id="resetDayBtn">Сброс дня</button>
+        </div>
+      </div>
+
+      <div id="authBox" class="flex" style="margin-top:10px">
+        <input id="emailInput" type="email" placeholder="email (для входа по ссылке)" style="max-width:260px">
+        <button class="btn" id="loginBtn">Войти</button>
+        <button class="btn" id="logoutBtn" style="display:none">Выйти</button>
+        <span id="whoami" class="sub"></span>
+      </div>
+
+      <div class="tabs" id="dayTabs"></div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="kpi">
+      <div class="card"><div class="muted small">Выполнено сегодня</div><div class="big" id="doneToday">0%</div><progress id="progToday" max="100" value="0"></progress></div>
+      <div class="card"><div class="muted small">Недельный прогресс</div><div class="big" id="doneWeek">0%</div><progress id="progWeek" max="100" value="0"></progress></div>
+      <div class="card"><div class="muted small">Книга / месяц</div><div class="big" id="bookPages">20 стр/день</div><div class="small muted">Читай 20–30 мин ежедневно</div></div>
+      <div class="card"><div class="muted small">Английский</div><div class="big" id="engDaily">Duolingo 15–30 мин</div><div class="small muted">Подкаст в дороге</div></div>
+    </section>
+
+    <section class="card">
+      <h3 style="margin-top:0">Будний день — расписание</h3>
+      <div class="grid" id="scheduleGrid"></div>
+    </section>
+
+    <section class="card">
+      <h3 style="margin-top:0">🍴 Питание за день</h3>
+      <div class="grid" id="nutritionMeals"></div>
+      <div class="grid" id="nutritionTotals"></div>
+      <div class="small muted" style="margin-top:8px">Цвет итога по калориям: >2000 — <b style="color:#ef4444">красный</b>, <1500 — <b style="color:#2563eb">синий</b>.</div>
+    </section>
+
+    <section class="card">
+      <h3 style="margin-top:0">Ежедневные цели</h3>
+      <div class="grid" id="dailyGoals"></div>
+    </section>
+
+    <section class="card">
+      <h3 style="margin-top:0">Итоги недели</h3>
+      <div class="grid" id="weeklyGoals"></div>
+      <div class="small muted" style="margin-top:8px">Неделя считается по ISO (пн–вс). «Сброс дня» чистит весь текущий день (расписание, цели и питание).</div>
+    </section>
+  
+    <section class="card">
+      <h3 style="margin-top:0">Состояние за день</h3>
+      <div class="grid" id="stateGrid"></div>
+      <div class="small muted">Выбери по шкале от 1 до 5: 1 — плохо, 5 — отлично.</div>
+    </section>
+
+  </main>
+
+  <footer class="sticky">
+    <div class="wrap flex" style="justify-content:space-between">
+      <div class="small muted">Добавь на домашний экран для быстрого доступа 📲</div>
+      <button class="btn primary" id="addToHome" style="display:none">Добавить на главный экран</button>
+    </div>
+  </footer>
+
+  <div class="settings" id="settings" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:16px">
+    <div class="box" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;max-width:420px;width:100%">
+      <h3 style="margin:0 0 8px">Настройки</h3>
+      <label>Время подъёма</label>
+      <input id="wakeTime" type="time" value="06:00">
+      <label>Время сна</label>
+      <input id="sleepTime" type="time" value="22:30">
+      <div class="flex" style="margin-top:12px;justify-content:flex-end">
+        <button class="btn" id="cancelSettings">Отмена</button>
+        <button class="btn primary" id="saveSettings">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ========= дата и утилиты =========
+  const DAYS_FULL = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
+  const pad=(n)=> String(n).padStart(2,'0');
+  const ymd=(d)=> `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  function isoWeek(d){ const t = new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-day+3); const first=new Date(Date.UTC(t.getUTCFullYear(),0,4)); const w=1+Math.round(((t-first)/86400000-3+((first.getUTCDay()+6)%7))/7); return `${t.getUTCFullYear()}-W${pad(w)}`;}
+  const today = new Date(); let currentDay = (today.getDay()+6)%7;
+
+  // ========= Тема и настройки =========
+  const root=document.documentElement, themeBtn=document.getElementById('themeBtn');
+  function applyTheme(t){ root.setAttribute('data-theme', t); localStorage.setItem('theme', t); }
+  applyTheme(localStorage.getItem('theme')||'dark');
+  themeBtn.onclick=()=> applyTheme(root.getAttribute('data-theme')==='dark'?'light':'dark');
+  const settings = document.getElementById('settings');
+  document.getElementById('settingsBtn').onclick=()=>{ loadTimes(); settings.style.display='flex'; };
+  document.getElementById('cancelSettings').onclick=()=> settings.style.display='none';
+  document.getElementById('saveSettings').onclick=()=>{ localStorage.setItem('wakeTime', document.getElementById('wakeTime').value); localStorage.setItem('sleepTime', document.getElementById('sleepTime').value); loadTimes(); settings.style.display='none'; scheduleSave(); };
+  function loadTimes(){ const w=localStorage.getItem('wakeTime')||'06:00', s=localStorage.getItem('sleepTime')||'22:30'; document.getElementById('wakeTime').value=w; document.getElementById('sleepTime').value=s; document.getElementById('sleepPill').textContent = `Сон: ${s} → ${w} (≈7–8 ч)`; }
+
+  // ========= Расписание и цели =========
+  const baseDay = [
+    ['05:30–06:00','Подъём, вода, дыхание, зарядка'],
+    ['06:00–07:00','Спорт'],
+    ['07:00–07:30','Завтрак (белок + овощи)'],
+    ['08:00–08:40','Дорога → аудиокнига/подкаст'],
+    ['09:00–13:00','Работа (фокус-блоки)'],
+    ['13:00–13:30','Обед + Duolingo'],
+    ['13:30–18:00','Работа (важные задачи)'],
+    ['18:00–18:40','Дорога → англ. подкаст/лекция'],
+    ['19:00–20:00','Ужин (лёгкий белок + овощи)'],
+    ['20:00–21:00','— свободное/семья —'],
+    ['21:00–21:30','Хобби (гитара/синтезатор)'],
+    ['21:30–22:00','Чтение книги'],
+    ['22:00–22:30','Вечерний ритуал, душ'],
+    ['22:30–06:00','Сон']
+  ];
+  const sportPlan = { 0:'Силовые (гиря/гантели)', 1:'Бег (интервалы 5–7 км)', 2:'Футбол', 3:'Силовые (гиря/гантели)', 4:'Бег (5–7 км)', 5:'Силовые + бег (комбо)', 6:'Футбол' };
+  const goalsDaily = ['7+ часов сна','Duolingo 15–30 мин','Аудио в дороге (утро/вечер)','20+ страниц книги','Питание по плану','Спорт дня выполнен'];
+  const goalsWeekly = ['5+ тренировок/активностей','2× силовые','2× футбол','2× бег (интервалы/длинный)','7× Duolingo','7× 20+ страниц книги','План недели составлен'];
+
+  // ========= DOM =========
+  const tabs = document.getElementById('dayTabs'); const grid = document.getElementById('scheduleGrid'); const daily = document.getElementById('dailyGoals'); const weekly = document.getElementById('weeklyGoals'); const sportPill=document.getElementById('sportPill');
+  const mealsGrid=document.getElementById('nutritionMeals'); const totalsGrid=document.getElementById('nutritionTotals');
+
+  function DAY_KEY(date,idx){ return `day:${ymd(date)}:${idx}`; }
+  function GOAL_KEY(date,idx){ return `goal:${ymd(date)}:${idx}`; }
+  function WEEK_KEY(week,idx){ return `wgoal:${week}:${idx}`; }
+  const NF_KEY = (date, meal, field) => `n:${ymd(date)}:${meal}:${field}`;
+
+  function makeRow(time,label,checked,onchange,key){
+    const t=document.createElement('div'); t.className='row';
+    const c1=document.createElement('div'); c1.className='time'; c1.textContent=time; t.appendChild(c1);
+    const c2=document.createElement('div'); c2.className='label'; c2.textContent=label; t.appendChild(c2);
+    const c3=document.createElement('div'); const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=checked; cb.onchange=()=>onchange(cb.checked); c3.appendChild(cb); t.appendChild(c3);
+    cb.setAttribute('data-key',key); return t;
+  }
+
+  function renderTabs(){
+    tabs.innerHTML='';
+    DAYS_FULL.forEach((name,i)=>{
+      const b=document.createElement('button');
+      b.className='tab'+(i===currentDay?' active':''); b.textContent=name;
+      b.onclick=()=>{ currentDay=i; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); b.classList.add('active'); renderAll(); };
+      tabs.appendChild(b);
+    });
+    document.getElementById('dateLine').textContent = `${DAYS_FULL[currentDay]} • ${ymd(today)}`;
+  }
+
+  function renderSchedule(){
+    grid.innerHTML=''; sportPill.textContent = `Спорт дня: ${sportPlan[currentDay]}`;
+    baseDay.forEach((item,idx)=>{
+      const key = DAY_KEY(today, idx);
+      const saved = localStorage.getItem(key) === '1';
+      const row = makeRow(item[0], item[1], saved, (val)=>{
+        localStorage.setItem(key, val?'1':'0');
+        updateProgress(); scheduleSave();
+      }, key);
+      grid.appendChild(row);
+    });
+  }
+
+  function renderDailyGoals(){
+    daily.innerHTML='';
+    goalsDaily.forEach((label,idx)=>{
+      const key = GOAL_KEY(today, idx);
+      const saved = localStorage.getItem(key) === '1';
+      const row = makeRow('—', label, saved, (val)=>{
+        localStorage.setItem(key, val?'1':'0');
+        updateProgress(); scheduleSave();
+      }, key);
+      daily.appendChild(row);
+    });
+  }
+
+  function renderWeeklyGoals(){
+    weekly.innerHTML='';
+    const w = isoWeek(today);
+    goalsWeekly.forEach((label,idx)=>{
+      const key = WEEK_KEY(w, idx);
+      const saved = localStorage.getItem(key) === '1';
+      const row = makeRow('Неделя', label, saved, (val)=>{
+        localStorage.setItem(key, val?'1':'0');
+        updateProgress(); scheduleSave();
+      }, key);
+      weekly.appendChild(row);
+    });
+  }
+
+  function updateProgress(){
+    const dayTotal = baseDay.length + goalsDaily.length;
+    let dayDone = 0;
+    for(let i=0;i<baseDay.length;i++) if(localStorage.getItem(DAY_KEY(today,i))==='1') dayDone++;
+    for(let i=0;i<goalsDaily.length;i++) if(localStorage.getItem(GOAL_KEY(today,i))==='1') dayDone++;
+    const dayPct = Math.round(100*dayDone/Math.max(1,dayTotal));
+    document.getElementById('doneToday').textContent = dayPct+'%';
+    document.getElementById('progToday').value = dayPct;
+
+    const w = isoWeek(today);
+    const wTotal = goalsWeekly.length;
+    let wDone = 0;
+    for(let i=0;i<goalsWeekly.length;i++) if(localStorage.getItem(WEEK_KEY(w,i))==='1') wDone++;
+    const wPct = Math.round(100*wDone/Math.max(1,wTotal));
+    document.getElementById('doneWeek').textContent = wPct+'%';
+    document.getElementById('progWeek').value = wPct;
+  }
+
+  // ===== Питание за день =====
+  const MEALS = ['Завтрак','Обед','Ужин','Перекусы'];
+  const N_FIELDS = ['Калории (ккал)','Белки (г)','Жиры (г)','Углеводы (г)'];
+  function getNum(k){ return parseInt(localStorage.getItem(k) || 0); }
+  function setNum(k,v){ localStorage.setItem(k, String(v)); }
+
+  function renderMeals(){
+    mealsGrid.innerHTML='';
+    const header=document.createElement('div'); header.className='row';
+    header.innerHTML = '<div class="time">Приём</div><div class="label">КБЖУ</div><div></div>';
+    mealsGrid.appendChild(header);
+    MEALS.forEach(meal=>{
+      const row=document.createElement('div'); row.className='row';
+      const c1=document.createElement('div'); c1.className='time'; c1.textContent=meal; row.appendChild(c1);
+      const c2=document.createElement('div'); c2.className='label';
+      const wrap=document.createElement('div'); wrap.className='flex';
+      N_FIELDS.forEach(field=>{
+        const key = NF_KEY(today, meal, field);
+        const inp=document.createElement('input'); inp.type='number'; inp.min='0'; inp.placeholder='0'; inp.value=getNum(key);
+        inp.onchange=()=>{ setNum(key, parseInt(inp.value||0)); renderTotals(); scheduleSave(); };
+        const lbl=document.createElement('span'); lbl.className='muted small'; lbl.textContent=field.split(' ')[0]+':';
+        const box=document.createElement('div'); box.className='flex'; box.appendChild(lbl); box.appendChild(inp);
+        wrap.appendChild(box);
+      });
+      c2.appendChild(wrap); row.appendChild(c2);
+      const c3=document.createElement('div'); row.appendChild(c3);
+      mealsGrid.appendChild(row);
+    });
+  }
+
+  function renderTotals(){
+    totalsGrid.innerHTML='';
+    const sums={ 'Калории (ккал)':0,'Белки (г)':0,'Жиры (г)':0,'Углеводы (г)':0 };
+    MEALS.forEach(meal=> N_FIELDS.forEach(field=> sums[field]+= getNum(NF_KEY(today, meal, field)) ));
+    N_FIELDS.forEach((field, idx)=>{
+      const row=document.createElement('div'); row.className='row';
+      const c1=document.createElement('div'); c1.className='time'; c1.textContent=field; row.appendChild(c1);
+      const c2=document.createElement('div'); c2.className='label'; c2.textContent=String(sums[field]); row.appendChild(c2);
+      const c3=document.createElement('div'); row.appendChild(c3);
+      totalsGrid.appendChild(row);
+      if(field==='Калории (ккал)'){ c2.style.color = (sums[field]>2000)?'#ef4444':(sums[field]<1500?'#2563eb':'inherit'); }
+    });
+  }
+
+  
+  // ===== Состояние (эмоциональное/физическое) =====
+  const stateGrid = document.getElementById('stateGrid');
+  const stateOptions = [
+    {v:1, label:'😖 1'},
+    {v:2, label:'😕 2'},
+    {v:3, label:'😐 3'},
+    {v:4, label:'🙂 4'},
+    {v:5, label:'😄 5'}
+  ];
+  const STATE_KEY = (date, type)=> `state:${ymd(date)}:${type}`; // type: mood|body
+
+  function renderStateRow(title, type){
+    const row=document.createElement('div'); row.className='row';
+    const c1=document.createElement('div'); c1.className='time'; c1.textContent=title; row.appendChild(c1);
+    const c2=document.createElement('div'); c2.className='label';
+    const wrap=document.createElement('div'); wrap.className='chips';
+    const saved = parseInt(localStorage.getItem(STATE_KEY(today, type))||0);
+    stateOptions.forEach(opt=>{
+      const b=document.createElement('button'); b.type='button'; b.className='chip'+(saved===opt.v?' active':''); b.textContent=opt.label;
+      b.onclick=()=>{ localStorage.setItem(STATE_KEY(today,type), String(opt.v)); renderStates(); scheduleSave(); };
+      wrap.appendChild(b);
+    });
+    c2.appendChild(wrap); row.appendChild(c2);
+    const c3=document.createElement('div'); row.appendChild(c3);
+    return row;
+  }
+
+  function renderStates(){
+    stateGrid.innerHTML='';
+    stateGrid.appendChild(renderStateRow('Эмоционально', 'mood'));
+    stateGrid.appendChild(renderStateRow('Физически', 'body'));
+  }
+
+  // ===== Экспорт / импорт =====
+  document.getElementById('exportBtn').onclick = ()=>{
+    const data = {};
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && (k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k==='theme'||k==='wakeTime'||k==='sleepTime')){
+        data[k]=localStorage.getItem(k);
+      }
+    }
+    const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='tracker-backup.json'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  };
+  document.getElementById('importInput').onchange = async (e)=>{
+    const file = e.target.files[0]; if(!file) return;
+    const text = await file.text();
+    try{
+      const data = JSON.parse(text);
+      Object.entries(data).forEach(([k,v])=>{
+        if(k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k==='theme'||k==='wakeTime'||k==='sleepTime') localStorage.setItem(k,String(v));
+      });
+      applyTheme(localStorage.getItem('theme')||'dark'); loadTimes(); renderAll(); alert('Импорт завершён ✅'); scheduleSave();
+    }catch(err){ alert('Ошибка импорта'); }
+  };
+
+  // ===== Сброс дня =====
+  document.getElementById('resetDayBtn').onclick = ()=>{
+    for(let i=0;i<baseDay.length;i++) localStorage.removeItem(DAY_KEY(today,i));
+    for(let i=0;i<goalsDaily.length;i++) localStorage.removeItem(GOAL_KEY(today,i));
+    const meals = ['Завтрак','Обед','Ужин','Перекусы']; const fields=['Калории (ккал)','Белки (г)','Жиры (г)','Углеводы (г)'];
+    meals.forEach(meal=> fields.forEach(f=> localStorage.removeItem(NF_KEY(today,meal,f)) ));
+    renderAll(); scheduleSave();
+  };
+
+  // ===== PWA =====
+  (function(){
+    const swCode = `self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open('tracker-v1').then(c=>c.addAll(['./'])))});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))})`;
+    const blob = new Blob([swCode], {type:'text/javascript'});
+    const swUrl = URL.createObjectURL(blob);
+    if('serviceWorker' in navigator){ navigator.serviceWorker.register(swUrl); }
+    let deferredPrompt; const btn = document.getElementById('addToHome');
+    window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); deferredPrompt=e; btn.style.display='inline-flex'; });
+    btn.onclick = async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); const {outcome}=await deferredPrompt.userChoice; if(outcome==='accepted'){ btn.style.display='none'; } deferredPrompt=null; };
+  })();
+
+  // ===== Supabase sync helpers =====
+  async function sbGetUser(){ const { data:{ user } } = await sb.auth.getUser(); return user; }
+  function collectDailyKeys(dateStr){ const daily={}; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k) continue; if(k.startsWith('day:'+dateStr)||k.startsWith('goal:'+dateStr)||k.startsWith('n:'+dateStr)) daily[k]=localStorage.getItem(k);} return daily; }
+  function applyDaily(data){ Object.entries(data||{}).forEach(([k,v])=> localStorage.setItem(k,v)); }
+  function collectWeeklyKeys(weekId){ const weekly={}; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k) continue; if(k.startsWith('wgoal:'+weekId+':')) weekly[k]=localStorage.getItem(k);} return weekly; }
+  function applyWeekly(data){ Object.entries(data||{}).forEach(([k,v])=> localStorage.setItem(k,v)); }
+  const todayStr_sync = ymd(today); const weekId_sync = isoWeek(today);
+  async function syncLoadAll(){ const user=await sbGetUser(); if(!user) return; const {data:drow}=await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd',todayStr_sync).maybeSingle(); applyDaily(drow?.data); const {data:wrow}=await sb.from('weekly_data').select('data').eq('user_id',user.id).eq('week_id',weekId_sync).maybeSingle(); applyWeekly(wrow?.data); renderAll(); }
+  let saveTimer; function scheduleSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(syncSaveAll, 1200); }
+  async function syncSaveAll(){ const user=await sbGetUser(); if(!user) return; const dailyData=collectDailyKeys(todayStr_sync); const weeklyData=collectWeeklyKeys(weekId_sync); if(Object.keys(dailyData).length){ await sb.from('daily_data').upsert({ user_id:user.id, ymd:todayStr_sync, data: dailyData, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' }); } if(Object.keys(weeklyData).length){ await sb.from('weekly_data').upsert({ user_id:user.id, week_id:weekId_sync, data: weeklyData, updated_at:new Date().toISOString() }, { onConflict:'user_id,week_id' }); } }
+  try{ sb.channel('changes').on('postgres_changes',{event:'*',schema:'public',table:'daily_data'},()=>syncLoadAll()).on('postgres_changes',{event:'*',schema:'public',table:'weekly_data'},()=>syncLoadAll()).subscribe(); }catch(e){}
+
+  // ===== Auth UI =====
+  document.getElementById('loginBtn').onclick = async ()=>{
+    const email = document.getElementById('emailInput').value.trim();
+    if(!email) return alert('Введи email');
+    const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.href } });
+    if(error) alert('Ошибка входа: '+error.message); else alert('Письмо со ссылкой отправлено на email.');
+  };
+  document.getElementById('logoutBtn').onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
+  sb.auth.onAuthStateChange(async (e, session)=>{
+    const user = session?.user;
+    document.getElementById('logoutBtn').style.display = user ? 'inline-flex' : 'none';
+    document.getElementById('whoami').textContent = user ? ('• '+(user.email || user.id)) : '';
+    if(user) await syncLoadAll();
+  });
+
+  function renderAll(){ renderTabs(); renderSchedule(); renderMeals(); renderTotals(); renderDailyGoals(); renderWeeklyGoals(); renderStates(); updateProgress(); }
+  loadTimes(); renderAll();
+  </script>
+</body>
+</html>
