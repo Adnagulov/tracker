@@ -12,8 +12,12 @@
     [data-theme="light"]{ --bg:#f7fafc; --card:#fff; --muted:#4b5563; --text:#0f172a; --accent:#16a34a; --accent2:#2563eb; --warn:#d97706; --danger:#dc2626; --border:#e5e7eb; }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Inter,Arial,sans-serif}
-    header{position:sticky;top:0;background:linear-gradient(180deg,rgba(15,23,42,.95),rgba(15,23,42,.7));backdrop-filter:blur(8px);z-index:10;border-bottom:1px solid var(--border)}
+
+    /* Шапка: прятать при скролле */
+    header{position:sticky;top:0;background:linear-gradient(180deg,rgba(15,23,42,.95),rgba(15,23,42,.7));backdrop-filter:blur(8px);z-index:10;border-bottom:1px solid var(--border);transition:transform .25s ease}
+    header.hide{transform:translateY(-110%)}
     [data-theme="light"] header{background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(255,255,255,.8))}
+
     .wrap{max-width:980px;margin:0 auto;padding:16px}
     h1{margin:0 0 4px;font-size:22px}
     .sub{color:var(--muted);font-size:13px}
@@ -28,11 +32,15 @@
     input[type="checkbox"]{width:28px;height:28px}
     input[type="number"], input[type="time"], input[type="email"]{font-size:16px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text);width:100%;max-width:140px}
     .muted{color:var(--muted)}
-    .chips{display:flex;gap:8px;flex-wrap:wrap}
-    .chip{padding:8px 10px;border:1px solid var(--border);border-radius:999px;background:#0b1222;color:var(--text);cursor:pointer;font-size:13px}
+
+    /* Эмодзи – одна строка под заголовком */
+    .chips{display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}
+    .chip{padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:#0b1222;color:var(--text);cursor:pointer;font-size:18px}
     [data-theme="light"] .chip{background:#eef2ff}
     .chip.active{outline:2px solid var(--accent2);}
-    
+    .stateRow{margin:10px 0}
+    .stateTitle{font-size:14px;color:var(--muted);margin-bottom:6px}
+
     .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);padding:6px 10px;border-radius:999px;background:#0b1024;font-size:12px}
     [data-theme="light"] .pill{background:#f1f5f9}
     .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -48,6 +56,7 @@
     [data-theme="light"] footer.sticky{background:linear-gradient(0deg,rgba(255,255,255,.95),rgba(255,255,255,.8))}
     .small{font-size:12px}
     .right{margin-left:auto}
+
     @media(max-width:560px){
       .wrap{padding:12px}
       h1{font-size:20px}
@@ -59,12 +68,12 @@
     }
   </style>
   <!-- Supabase SDK -->
- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const SUPABASE_URL = "https://afxbyrypaqnobaalipjm.supabase.co"
-  const SUPABASE_ANON_KEY = "sb_publishable_vROzTIfTCdtiea3xfMCcHA_bthD-zZr";
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://afxbyrypaqnobaalipjm.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_vROzTIfTCdtiea3xfMCcHA_bthD-zZr";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
 </head>
 <body>
   <header>
@@ -129,11 +138,17 @@
       <div class="grid" id="weeklyGoals"></div>
       <div class="small muted" style="margin-top:8px">Неделя считается по ISO (пн–вс). «Сброс дня» чистит весь текущий день (расписание, цели и питание).</div>
     </section>
-  
+
     <section class="card">
       <h3 style="margin-top:0">Состояние за день</h3>
-      <div class="grid" id="stateGrid"></div>
+      <div id="stateGrid"></div>
       <div class="small muted">Выбери по шкале от 1 до 5: 1 — плохо, 5 — отлично.</div>
+    </section>
+
+    <section class="card">
+      <h3 style="margin-top:0">Здоровье и дисциплина (утро)</h3>
+      <div class="grid" id="healthGrid"></div>
+      <div class="grid" id="alphaGrid"></div>
     </section>
 
   </main>
@@ -319,7 +334,7 @@
     totalsGrid.innerHTML='';
     const sums={ 'Калории (ккал)':0,'Белки (г)':0,'Жиры (г)':0,'Углеводы (г)':0 };
     MEALS.forEach(meal=> N_FIELDS.forEach(field=> sums[field]+= getNum(NF_KEY(today, meal, field)) ));
-    N_FIELDS.forEach((field, idx)=>{
+    N_FIELDS.forEach((field)=>{
       const row=document.createElement('div'); row.className='row';
       const c1=document.createElement('div'); c1.className='time'; c1.textContent=field; row.appendChild(c1);
       const c2=document.createElement('div'); c2.className='label'; c2.textContent=String(sums[field]); row.appendChild(c2);
@@ -329,7 +344,6 @@
     });
   }
 
-  
   // ===== Состояние (эмоциональное/физическое) =====
   const stateGrid = document.getElementById('stateGrid');
   const stateOptions = [
@@ -342,19 +356,26 @@
   const STATE_KEY = (date, type)=> `state:${ymd(date)}:${type}`; // type: mood|body
 
   function renderStateRow(title, type){
-    const row=document.createElement('div'); row.className='row';
-    const c1=document.createElement('div'); c1.className='time'; c1.textContent=title; row.appendChild(c1);
-    const c2=document.createElement('div'); c2.className='label';
-    const wrap=document.createElement('div'); wrap.className='chips';
+    const box = document.createElement('div');
+    box.className = 'stateRow';
+
+    const h = document.createElement('div');
+    h.className = 'stateTitle';
+    h.textContent = title;
+    box.appendChild(h);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'chips';
     const saved = parseInt(localStorage.getItem(STATE_KEY(today, type))||0);
+
     stateOptions.forEach(opt=>{
-      const b=document.createElement('button'); b.type='button'; b.className='chip'+(saved===opt.v?' active':''); b.textContent=opt.label;
+      const b=document.createElement('button'); b.type='button';
+      b.className='chip'+(saved===opt.v?' active':''); b.textContent=opt.label;
       b.onclick=()=>{ localStorage.setItem(STATE_KEY(today,type), String(opt.v)); renderStates(); scheduleSave(); };
       wrap.appendChild(b);
     });
-    c2.appendChild(wrap); row.appendChild(c2);
-    const c3=document.createElement('div'); row.appendChild(c3);
-    return row;
+    box.appendChild(wrap);
+    return box;
   }
 
   function renderStates(){
@@ -363,12 +384,61 @@
     stateGrid.appendChild(renderStateRow('Физически', 'body'));
   }
 
+  // ===== Здоровье и дисциплина (утро) =====
+  const healthGrid = document.getElementById('healthGrid');
+  const alphaGrid  = document.getElementById('alphaGrid');
+  const PULSE_KEY = (date)=> `metric:${ymd(date)}:pulse`;
+  const ERECT_KEY = (date)=> `metric:${ymd(date)}:erection`; // 1/0
+  const ALPHA_KEY = (date,idx)=> `alpha:${ymd(date)}:${idx}`;
+  const alphaItems = ['Быт (порядок)','Спорт (для стаи)','Ответственность (без оправданий)','Деньги (3 способа заработать)'];
+
+  function renderHealth(){
+    healthGrid.innerHTML='';
+    // Пульс
+    const r1=document.createElement('div'); r1.className='row';
+    const t1=document.createElement('div'); t1.className='time'; t1.textContent='Пульс утром'; r1.appendChild(t1);
+    const l1=document.createElement('div'); l1.className='label';
+    const inp=document.createElement('input'); inp.type='number'; inp.min='30'; inp.max='150'; inp.placeholder='уд/мин';
+    inp.value = localStorage.getItem(PULSE_KEY(today)) || '';
+    inp.onchange=()=>{ localStorage.setItem(PULSE_KEY(today), String(inp.value||'')); scheduleSave(); };
+    l1.appendChild(inp); r1.appendChild(l1); r1.appendChild(document.createElement('div'));
+    healthGrid.appendChild(r1);
+
+    // Эрекция
+    const r2=document.createElement('div'); r2.className='row';
+    const t2=document.createElement('div'); t2.className='time'; t2.textContent='Эрекция'; r2.appendChild(t2);
+    const l2=document.createElement('div'); l2.className='label';
+    const wrap=document.createElement('div'); wrap.className='chips';
+    const saved = parseInt(localStorage.getItem(ERECT_KEY(today)) || 0); // 1/0
+    [['Да',1],['Нет',0]].forEach(([txt,val])=>{
+      const b=document.createElement('button'); b.type='button';
+      b.className='chip'+(saved===val?' active':''); b.textContent=txt;
+      b.onclick=()=>{ localStorage.setItem(ERECT_KEY(today), String(val)); renderHealth(); scheduleSave(); };
+      wrap.appendChild(b);
+    });
+    l2.appendChild(wrap); r2.appendChild(l2); r2.appendChild(document.createElement('div'));
+    healthGrid.appendChild(r2);
+  }
+
+  function renderAlpha(){
+    alphaGrid.innerHTML='';
+    // заголовок в левой колонке + чекбоксы справа
+    alphaItems.forEach((label,idx)=>{
+      const key = ALPHA_KEY(today, idx);
+      const saved = localStorage.getItem(key) === '1';
+      const row = makeRow(idx===0?'Альфа 30 дней':'', label, saved, (val)=>{
+        localStorage.setItem(key, val?'1':'0'); scheduleSave();
+      }, key);
+      alphaGrid.appendChild(row);
+    });
+  }
+
   // ===== Экспорт / импорт =====
   document.getElementById('exportBtn').onclick = ()=>{
     const data = {};
     for(let i=0;i<localStorage.length;i++){
       const k = localStorage.key(i);
-      if(k && (k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k==='theme'||k==='wakeTime'||k==='sleepTime')){
+      if(k && (k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k.startsWith('state:')||k.startsWith('metric:')||k.startsWith('alpha:')||k==='theme'||k==='wakeTime'||k==='sleepTime')){
         data[k]=localStorage.getItem(k);
       }
     }
@@ -383,7 +453,7 @@
     try{
       const data = JSON.parse(text);
       Object.entries(data).forEach(([k,v])=>{
-        if(k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k==='theme'||k==='wakeTime'||k==='sleepTime') localStorage.setItem(k,String(v));
+        if(k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k.startsWith('state:')||k.startsWith('metric:')||k.startsWith('alpha:')||k==='theme'||k==='wakeTime'||k==='sleepTime') localStorage.setItem(k,String(v));
       });
       applyTheme(localStorage.getItem('theme')||'dark'); loadTimes(); renderAll(); alert('Импорт завершён ✅'); scheduleSave();
     }catch(err){ alert('Ошибка импорта'); }
@@ -395,6 +465,11 @@
     for(let i=0;i<goalsDaily.length;i++) localStorage.removeItem(GOAL_KEY(today,i));
     const meals = ['Завтрак','Обед','Ужин','Перекусы']; const fields=['Калории (ккал)','Белки (г)','Жиры (г)','Углеводы (г)'];
     meals.forEach(meal=> fields.forEach(f=> localStorage.removeItem(NF_KEY(today,meal,f)) ));
+    // состояние/метрики/альфа
+    ['mood','body'].forEach(t=> localStorage.removeItem(`state:${ymd(today)}:${t}`));
+    localStorage.removeItem(`metric:${ymd(today)}:pulse`);
+    localStorage.removeItem(`metric:${ymd(today)}:erection`);
+    for(let i=0;i<4;i++) localStorage.removeItem(`alpha:${ymd(today)}:${i}`);
     renderAll(); scheduleSave();
   };
 
@@ -411,7 +486,15 @@
 
   // ===== Supabase sync helpers =====
   async function sbGetUser(){ const { data:{ user } } = await sb.auth.getUser(); return user; }
-  function collectDailyKeys(dateStr){ const daily={}; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k) continue; if(k.startsWith('day:'+dateStr)||k.startsWith('goal:'+dateStr)||k.startsWith('n:'+dateStr)) daily[k]=localStorage.getItem(k);} return daily; }
+  function collectDailyKeys(dateStr){
+    const daily={};
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i); if(!k) continue;
+      if(k.startsWith('day:'+dateStr)||k.startsWith('goal:'+dateStr)||k.startsWith('n:'+dateStr)||k.startsWith('state:'+dateStr)||k.startsWith('metric:'+dateStr)||k.startsWith('alpha:'+dateStr))
+        daily[k]=localStorage.getItem(k);
+    }
+    return daily;
+  }
   function applyDaily(data){ Object.entries(data||{}).forEach(([k,v])=> localStorage.setItem(k,v)); }
   function collectWeeklyKeys(weekId){ const weekly={}; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k) continue; if(k.startsWith('wgoal:'+weekId+':')) weekly[k]=localStorage.getItem(k);} return weekly; }
   function applyWeekly(data){ Object.entries(data||{}).forEach(([k,v])=> localStorage.setItem(k,v)); }
@@ -436,7 +519,27 @@
     if(user) await syncLoadAll();
   });
 
-  function renderAll(){ renderTabs(); renderSchedule(); renderMeals(); renderTotals(); renderDailyGoals(); renderWeeklyGoals(); renderStates(); updateProgress(); }
+  // Автоскрытие шапки при скролле
+  (function(){
+    const hdr = document.querySelector('header');
+    let lastY = window.scrollY;
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      const y = window.scrollY;
+      if (!ticking){
+        window.requestAnimationFrame(() => {
+          const goingDown = y > lastY && y > 20;
+          const atTop = y < 10;
+          hdr.classList.toggle('hide', goingDown && !atTop);
+          lastY = y;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
+  })();
+
+  function renderAll(){ renderTabs(); renderSchedule(); renderMeals(); renderTotals(); renderDailyGoals(); renderWeeklyGoals(); renderStates(); renderHealth(); renderAlpha(); updateProgress(); }
   loadTimes(); renderAll();
   </script>
 </body>
