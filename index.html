@@ -58,15 +58,13 @@
       .kpi{grid-template-columns:1fr 1fr}
     }
   </style>
-
   <!-- Supabase SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    // TODO: вставь свои значения
-    const SUPABASE_URL = "https://adnagulov.github.io/tracker/";
-    const SUPABASE_ANON_KEY = "sb_publishable_vROzTIfTCdtiea3xfMCcHA_bthD-zZr";
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  </script>
+ <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = "https://xxxxxxxxxxxx.supabase.co";  // из Settings → API (Project URL)
+  const SUPABASE_ANON_KEY = "eyJhbGciOi...";                // anon public key
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
 </head>
 <body>
   <header>
