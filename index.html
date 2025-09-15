@@ -18,6 +18,17 @@
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Inter,Arial,sans-serif}
 
+    /* 🔧 Шапка обычная (НЕ фиксируется нигде) */
+    header{
+      position:relative; top:auto; background:var(--bg);
+      border-bottom:1px solid var(--border); backdrop-filter:none; z-index:auto;
+    }
+    [data-theme="light"] header{ background:var(--bg); }
+
+    .wrap{max-width:1024px;margin:0 auto;padding:16px}
+    h1{margin:0 0 4px;font-size:24px}
+    .sub{color:var(--muted);font-size:13px}
+
     .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
     .tab{flex:1;min-width:120px;text-align:center;padding:12px 10px;border:1px solid var(--border);border-radius:12px;background:var(--card);cursor:pointer;color:var(--text);font-weight:700}
     .tab.active{outline:2px solid var(--accent2)}
@@ -53,7 +64,7 @@
     .kpi .card{padding:14px}
     .big{font-size:22px;font-weight:800}
     progress{width:100%;height:14px}
-    footer.sticky{position:sticky;bottom:0;background:linear-gradient(0deg,rgba(15,23,42,.97),rgba(15,23,42,.88));backdrop-filter:blur(8px);border-top:1px solid var(--border)}
+    footer.sticky{position:sticky;bottom:0;background:linear-gradient(0deg,rgba(15,23,42,.97),rgba(15,23,42,.9));backdrop-filter:blur(8px);border-top:1px solid var(--border)}
     [data-theme="light"] footer.sticky{background:linear-gradient(0deg,rgba(255,255,255,.97),rgba(255,255,255,.9))}
     .small{font-size:12px}
     .right{margin-left:auto}
@@ -108,7 +119,7 @@
           <button class="btn" id="settingsBtn">⚙️</button>
           <button class="btn" id="exportBtn">Экспорт</button>
           <label class="btn" for="importInput">Импорт<input id="importInput" type="file" accept="application/json" hidden></label>
-          <button class="btn danger" id="resetDayBtn">Сброс дня</button>
+          <button class="btn warn" id="resetDayBtn">Сброс дня</button>
           <button class="btn primary" id="saveNearBtn">Сохранить</button>
           <a class="btn ghost" href="./charts.html">Графики</a>
         </div>
@@ -123,7 +134,6 @@
 
       <div class="tabs" id="dayTabs"></div>
 
-      <!-- Навигация по неделям -->
       <div class="flex" id="weekNav" style="margin-top:6px">
         <button class="btn" id="prevWeekBtn">⟵ Неделя</button>
         <div class="pill" id="weekLabel">Неделя —</div>
@@ -139,7 +149,7 @@
       <div class="card"><div class="muted small">Книга / месяц</div><div class="big" id="bookPages">20 стр/день</div><div class="small muted">Читай 20–30 мин ежедневно</div></div>
       <div class="card"><div class="muted small">Английский</div><div class="big" id="engDaily">Duolingo 15–30 мин</div><div class="small muted">Подкаст в дороге</div></div>
 
-      <!-- мини-графики здоровья -->
+      <!-- мини-графики здоровья за неделю -->
       <div class="card" id="healthWeeklyCard">
         <div class="muted small">Здоровье (неделя)</div>
         <div class="spark-wrap" style="margin-top:6px">
@@ -218,22 +228,19 @@
   </div>
 
   <script>
-  // ========= дата и утилиты =========
+  /* ====== Дата/утилы ====== */
   const DAYS_FULL = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
   const pad=(n)=> String(n).padStart(2,'0');
   const ymd=(d)=> `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   function isoWeek(d){ const t = new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-day+3); const first=new Date(Date.UTC(t.getUTCFullYear(),0,4)); const w=1+Math.round(((t-first)/86400000-3+((first.getUTCDay()+6)%7))/7); return `${t.getUTCFullYear()}-W${pad(w)}`;}
-
   const today = new Date();
-
-  // Просматриваемая неделя/день
-  function startOfISOWeek(d){ const t = new Date(d.getFullYear(),d.getMonth(),d.getDate()); const day=(t.getDay()+6)%7; t.setDate(t.getDate()-day); t.setHours(0,0,0,0); return t; }
-  function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
-  let viewWeekStart = startOfISOWeek(today); // понедельник
-  let currentDay = (today.getDay()+6)%7;     // 0..6
+  function startOfISOWeek(d){ const t=new Date(d.getFullYear(),d.getMonth(),d.getDate()); const day=(t.getDay()+6)%7; t.setDate(t.getDate()-day); t.setHours(0,0,0,0); return t;}
+  function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x;}
+  let viewWeekStart = startOfISOWeek(today);
+  let currentDay = (today.getDay()+6)%7;
   function getViewDate(){ return addDays(viewWeekStart, currentDay); }
 
-  // ========= Тема и настройки =========
+  /* ====== Тема/настройки ====== */
   const root=document.documentElement, themeBtn=document.getElementById('themeBtn');
   function applyTheme(t){ root.setAttribute('data-theme', t); localStorage.setItem('theme', t); }
   applyTheme(localStorage.getItem('theme')||'dark');
@@ -242,9 +249,9 @@
   document.getElementById('settingsBtn').onclick=()=>{ loadTimes(); settings.style.display='flex'; };
   document.getElementById('cancelSettings').onclick=()=> settings.style.display='none';
   document.getElementById('saveSettings').onclick=()=>{ localStorage.setItem('wakeTime', document.getElementById('wakeTime').value); localStorage.setItem('sleepTime', document.getElementById('sleepTime').value); loadTimes(); settings.style.display='none'; scheduleSave(); };
-  function loadTimes(){ const w=localStorage.getItem('wakeTime')||'06:00', s=localStorage.getItem('sleepTime')||'22:30'; document.getElementById('wakeTime').value=w; document.getElementById('sleepTime').value=s; document.getElementById('sleepPill').textContent = `Сон: ${s} → ${w} (≈7–8 ч)`; }
+  function loadTimes(){ const w=localStorage.getItem('wakeTime')||'06:00', s=localStorage.getItem('sleepTime')||'22:30'; document.getElementById('wakeTime').value=w; document.getElementById('sleepTime').value=s; document.getElementById('sleepPill').textContent=`Сон: ${s} → ${w} (≈7–8 ч)`; }
 
-  // ========= Расписание и цели =========
+  /* ====== Данные/ключи ====== */
   const baseDay = [
     ['05:30–06:00','Подъём, вода, дыхание, зарядка'],
     ['06:00–07:00','Спорт'],
@@ -261,27 +268,22 @@
     ['22:00–22:30','Вечерний ритуал, душ'],
     ['22:30–06:00','Сон']
   ];
-  const sportPlan = { 0:'Силовые (гиря/гантели)', 1:'Бег (интервалы 5–7 км)', 2:'Футбол', 3:'Силовые (гиря/гантели)', 4:'Бег (5–7 км)', 5:'Силовые + бег (комбо)', 6:'Футбол' };
-  const goalsDaily = ['7+ часов сна','Duolingo 15–30 мин','Аудио в дороге (утро/вечер)','20+ страниц книги','Питание по плану','Спорт дня выполнен'];
+  const sportPlan = {0:'Силовые (гиря/гантели)',1:'Бег (интервалы 5–7 км)',2:'Футбол',3:'Силовые (гиря/гантели)',4:'Бег (5–7 км)',5:'Силовые + бег (комбо)',6:'Футбол'};
+  const goalsDaily  = ['7+ часов сна','Duolingo 15–30 мин','Аудио в дороге (утро/вечер)','20+ страниц книги','Питание по плану','Спорт дня выполнен'];
   const goalsWeekly = ['5+ тренировок/активностей','2× силовые','2× футбол','2× бег (интервалы/длинный)','7× Duolingo','7× 20+ страниц книги','План недели составлен'];
 
-  // ========= DOM =========
-  const tabs = document.getElementById('dayTabs'); const grid = document.getElementById('scheduleGrid'); const daily = document.getElementById('dailyGoals'); const weekly = document.getElementById('weeklyGoals'); const sportPill=document.getElementById('sportPill');
-  const mealsGrid=document.getElementById('nutritionMeals'); const totalsGrid=document.getElementById('nutritionTotals');
+  const DAY_KEY  =(d,i)=>`day:${ymd(d)}:${i}`;
+  const GOAL_KEY =(d,i)=>`goal:${ymd(d)}:${i}`;
+  const WEEK_KEY =(w,i)=>`wgoal:${w}:${i}`;
+  const NF_KEY   =(d,m,f)=>`n:${ymd(d)}:${m}:${f}`;
+  const STATE_KEY=(d,t)=>`state:${ymd(d)}:${t}`;
+  const PULSE_KEY=(d)=>`metric:${ymd(d)}:pulse`;
+  const WEIGHT_KEY=(d)=>`metric:${ymd(d)}:weight`;
+  const ERECT_KEY =(d)=>`metric:${ymd(d)}:erection`;
+  const ALPHA_KEY =(d,i)=>`alpha:${ymd(d)}:${i}`;
 
-  function DAY_KEY(date,idx){ return `day:${ymd(date)}:${idx}`; }
-  function GOAL_KEY(date,idx){ return `goal:${ymd(date)}:${idx}`; }
-  function WEEK_KEY(week,idx){ return `wgoal:${week}:${idx}`; }
-  const NF_KEY = (date, meal, field) => `n:${ymd(date)}:${meal}:${field}`;
-
-  function makeRow(time,label,checked,onchange,key){
-    const t=document.createElement('div'); t.className='row';
-    const c1=document.createElement('div'); c1.className='time'; c1.textContent=time; t.appendChild(c1);
-    const c2=document.createElement('div'); c2.className='label'; c2.textContent=label; t.appendChild(c2);
-    const c3=document.createElement('div'); const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=checked; cb.onchange=()=>onchange(cb.checked); c3.appendChild(cb); t.appendChild(c3);
-    cb.setAttribute('data-key',key); return t;
-  }
-
+  /* ====== Рендер ====== */
+  const tabs=document.getElementById('dayTabs');
   function renderTabs(){
     tabs.innerHTML='';
     DAYS_FULL.forEach((name,i)=>{
@@ -290,213 +292,105 @@
       b.onclick=()=>{ currentDay=i; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); b.classList.add('active'); renderAll(); syncLoadFor(getViewDate()); };
       tabs.appendChild(b);
     });
-    const vd = getViewDate();
+    const vd=getViewDate();
     document.getElementById('dateLine').textContent = `${DAYS_FULL[currentDay]} • ${ymd(vd)}`;
     document.getElementById('weekLabel').textContent = `Неделя ${isoWeek(vd)}`;
   }
 
+  const grid=document.getElementById('scheduleGrid'), daily=document.getElementById('dailyGoals'), weekly=document.getElementById('weeklyGoals'), sportPill=document.getElementById('sportPill');
+  function makeRow(time,label,checked,onchange,key){
+    const t=document.createElement('div'); t.className='row';
+    const c1=document.createElement('div'); c1.className='time'; c1.textContent=time; t.appendChild(c1);
+    const c2=document.createElement('div'); c2.className='label'; c2.textContent=label; t.appendChild(c2);
+    const c3=document.createElement('div'); const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=checked; cb.onchange=()=>onchange(cb.checked); c3.appendChild(cb); t.appendChild(c3);
+    cb.setAttribute('data-key',key); return t;
+  }
   function renderSchedule(){
-    const vd = getViewDate();
-    grid.innerHTML=''; sportPill.textContent = `Спорт дня: ${sportPlan[currentDay]}`;
-    baseDay.forEach((item,idx)=>{
-      const key = DAY_KEY(vd, idx);
-      const saved = localStorage.getItem(key) === '1';
-      const row = makeRow(item[0], item[1], saved, (val)=>{
-        localStorage.setItem(key, val?'1':'0');
-        updateProgress(); scheduleSave();
-      }, key);
-      grid.appendChild(row);
-    });
+    const vd=getViewDate(); grid.innerHTML=''; sportPill.textContent=`Спорт дня: ${sportPlan[currentDay]}`;
+    baseDay.forEach((it,i)=>{ const key=DAY_KEY(vd,i); const saved=localStorage.getItem(key)==='1';
+      grid.appendChild(makeRow(it[0],it[1],saved,(v)=>{ localStorage.setItem(key,v?'1':'0'); updateProgress(); scheduleSave(); },key)); });
   }
-
   function renderDailyGoals(){
-    const vd = getViewDate();
-    daily.innerHTML='';
-    goalsDaily.forEach((label,idx)=>{
-      const key = GOAL_KEY(vd, idx);
-      const saved = localStorage.getItem(key) === '1';
-      const row = makeRow('—', label, saved, (val)=>{
-        localStorage.setItem(key, val?'1':'0');
-        updateProgress(); scheduleSave();
-      }, key);
-      daily.appendChild(row);
-    });
+    const vd=getViewDate(); daily.innerHTML='';
+    goalsDaily.forEach((lab,i)=>{ const key=GOAL_KEY(vd,i); const saved=localStorage.getItem(key)==='1';
+      daily.appendChild(makeRow('—',lab,saved,(v)=>{ localStorage.setItem(key,v?'1':'0'); updateProgress(); scheduleSave(); },key)); });
   }
-
   function renderWeeklyGoals(){
-    weekly.innerHTML='';
-    const w = isoWeek(getViewDate());
-    goalsWeekly.forEach((label,idx)=>{
-      const key = WEEK_KEY(w, idx);
-      const saved = localStorage.getItem(key) === '1';
-      const row = makeRow('Неделя', label, saved, (val)=>{
-        localStorage.setItem(key, val?'1':'0');
-        updateProgress(); scheduleSave();
-      }, key);
-      weekly.appendChild(row);
-    });
+    weekly.innerHTML=''; const w=isoWeek(getViewDate());
+    goalsWeekly.forEach((lab,i)=>{ const key=WEEK_KEY(w,i); const saved=localStorage.getItem(key)==='1';
+      weekly.appendChild(makeRow('Неделя',lab,saved,(v)=>{ localStorage.setItem(key,v?'1':'0'); updateProgress(); scheduleSave(); },key)); });
   }
-
   function updateProgress(){
-    const vd = getViewDate();
-    const dayTotal = baseDay.length + goalsDaily.length;
-    let dayDone = 0;
-    for(let i=0;i<baseDay.length;i++) if(localStorage.getItem(DAY_KEY(vd,i))==='1') dayDone++;
-    for(let i=0;i<goalsDaily.length;i++) if(localStorage.getItem(GOAL_KEY(vd,i))==='1') dayDone++;
-    const dayPct = Math.round(100*dayDone/Math.max(1,dayTotal));
-    document.getElementById('doneToday').textContent = dayPct+'%';
-    document.getElementById('progToday').value = dayPct;
-
-    const w = isoWeek(vd);
-    const wTotal = goalsWeekly.length;
-    let wDone = 0;
-    for(let i=0;i<goalsWeekly.length;i++) if(localStorage.getItem(WEEK_KEY(w,i))==='1') wDone++;
-    const wPct = Math.round(100*wDone/Math.max(1,wTotal));
-    document.getElementById('doneWeek').textContent = wPct+'%';
-    document.getElementById('progWeek').value = wPct;
+    const vd=getViewDate(); const dayTotal=baseDay.length+goalsDaily.length;
+    let done=0; for(let i=0;i<baseDay.length;i++) if(localStorage.getItem(DAY_KEY(vd,i))==='1') done++;
+    for(let i=0;i<goalsDaily.length;i++) if(localStorage.getItem(GOAL_KEY(vd,i))==='1') done++;
+    const dp=Math.round(100*done/Math.max(1,dayTotal)); document.getElementById('doneToday').textContent=dp+'%'; document.getElementById('progToday').value=dp;
+    const w=isoWeek(vd); let wDone=0; for(let i=0;i<goalsWeekly.length;i++) if(localStorage.getItem(WEEK_KEY(w,i))==='1') wDone++;
+    const wp=Math.round(100*wDone/Math.max(1,goalsWeekly.length)); document.getElementById('doneWeek').textContent=wp+'%'; document.getElementById('progWeek').value=wp;
   }
 
-  // ===== Питание =====
-  const MEALS = ['Завтрак','Обед','Ужин','Перекусы'];
-  const N_FIELDS = ['Калории (ккал)','Белки (г)','Жиры (г)','Углеводы (г)'];
-  function getNum(k){ return parseInt(localStorage.getItem(k) || 0); }
-  function setNum(k,v){ localStorage.setItem(k, String(v)); }
-
+  /* ====== Питание ====== */
+  const mealsGrid=document.getElementById('nutritionMeals'), totalsGrid=document.getElementById('nutritionTotals');
+  const MEALS=['Завтрак','Обед','Ужин','Перекусы']; const N_FIELDS=['Калории (ккал)','Белки (г)','Жиры (г)','Углеводы (г)'];
+  const getNum=(k)=>parseInt(localStorage.getItem(k)||0); const setNum=(k,v)=>localStorage.setItem(k,String(v));
   function renderMeals(){
-    const vd = getViewDate();
-    mealsGrid.innerHTML='';
-    const header=document.createElement('div'); header.className='row';
-    header.innerHTML = '<div class="time">Приём</div><div class="label">КБЖУ</div><div></div>';
-    mealsGrid.appendChild(header);
+    const vd=getViewDate(); mealsGrid.innerHTML='';
+    const header=document.createElement('div'); header.className='row'; header.innerHTML='<div class="time">Приём</div><div class="label">КБЖУ</div><div></div>'; mealsGrid.appendChild(header);
     MEALS.forEach(meal=>{
-      const row=document.createElement('div'); row.className='row';
-      const c1=document.createElement('div'); c1.className='time'; c1.textContent=meal; row.appendChild(c1);
-      const c2=document.createElement('div'); c2.className='label';
-      const wrap=document.createElement('div'); wrap.className='flex';
-      N_FIELDS.forEach(field=>{
-        const key = NF_KEY(vd, meal, field);
-        const inp=document.createElement('input'); inp.type='number'; inp.min='0'; inp.placeholder='0'; inp.value=getNum(key);
-        inp.onchange=()=>{ setNum(key, parseInt(inp.value||0)); renderTotals(); scheduleSave(); };
-        const lbl=document.createElement('span'); lbl.className='muted small'; lbl.textContent=field.split(' ')[0]+':';
-        const box=document.createElement('div'); box.className='flex'; box.appendChild(lbl); box.appendChild(inp);
-        wrap.appendChild(box);
+      const row=document.createElement('div'); row.className='row'; const c1=document.createElement('div'); c1.className='time'; c1.textContent=meal; row.appendChild(c1);
+      const c2=document.createElement('div'); c2.className='label'; const wrap=document.createElement('div'); wrap.className='flex';
+      N_FIELDS.forEach(f=>{ const key=NF_KEY(vd,meal,f); const inp=document.createElement('input'); inp.type='number'; inp.min='0'; inp.placeholder='0'; inp.value=getNum(key);
+        inp.onchange=()=>{ setNum(key,parseInt(inp.value||0)); renderTotals(); scheduleSave(); };
+        const lbl=document.createElement('span'); lbl.className='muted small'; lbl.textContent=f.split(' ')[0]+':'; const box=document.createElement('div'); box.className='flex'; box.appendChild(lbl); box.appendChild(inp); wrap.appendChild(box);
       });
-      c2.appendChild(wrap); row.appendChild(c2);
-      const c3=document.createElement('div'); row.appendChild(c3);
-      mealsGrid.appendChild(row);
+      c2.appendChild(wrap); row.appendChild(c2); row.appendChild(document.createElement('div')); mealsGrid.appendChild(row);
     });
   }
-
   function renderTotals(){
-    const vd = getViewDate();
-    totalsGrid.innerHTML='';
-    const sums={ 'Калории (ккал)':0,'Белки (г)':0,'Жиры (г)':0,'Углеводы (г)':0 };
-    MEALS.forEach(meal=> N_FIELDS.forEach(field=> sums[field]+= getNum(NF_KEY(vd, meal, field)) ));
-    N_FIELDS.forEach((field)=>{
-      const row=document.createElement('div'); row.className='row';
-      const c1=document.createElement('div'); c1.className='time'; c1.textContent=field; row.appendChild(c1);
-      const c2=document.createElement('div'); c2.className='label'; c2.textContent=String(sums[field]); row.appendChild(c2);
-      const c3=document.createElement('div'); row.appendChild(c3);
-      totalsGrid.appendChild(row);
-      if(field==='Калории (ккал)'){ c2.style.color = (sums[field]>2000)?'#ef4444':(sums[field]<1500?'#2563eb':'inherit'); }
+    const vd=getViewDate(); totalsGrid.innerHTML=''; const sums={'Калории (ккал)':0,'Белки (г)':0,'Жиры (г)':0,'Углеводы (г)':0};
+    MEALS.forEach(m=>N_FIELDS.forEach(f=> sums[f]+=getNum(NF_KEY(vd,m,f))));
+    N_FIELDS.forEach(field=>{
+      const row=document.createElement('div'); row.className='row'; const c1=document.createElement('div'); c1.className='time'; c1.textContent=field; row.appendChild(c1);
+      const c2=document.createElement('div'); c2.className='label'; c2.textContent=String(sums[field]); if(field==='Калории (ккал)'){ c2.style.color=(sums[field]>2000)?'#ef4444':(sums[field]<1500?'#2563eb':'inherit'); } row.appendChild(c2);
+      row.appendChild(document.createElement('div')); totalsGrid.appendChild(row);
     });
   }
 
-  // ===== Состояние =====
-  const stateGrid = document.getElementById('stateGrid');
-  const stateOptions = [
-    {v:1, label:'😖 1'},
-    {v:2, label:'😕 2'},
-    {v:3, label:'😐 3'},
-    {v:4, label:'🙂 4'},
-    {v:5, label:'😄 5'}
-  ];
-  const STATE_KEY = (date, type)=> `state:${ymd(date)}:${type}`;
-
-  function renderStateRow(title, type){
-    const vd = getViewDate();
-    const box = document.createElement('div'); box.className = 'stateRow';
-    const h = document.createElement('div'); h.className = 'stateTitle'; h.textContent = title; box.appendChild(h);
-    const wrap = document.createElement('div'); wrap.className = 'chips';
-    const saved = parseInt(localStorage.getItem(STATE_KEY(vd, type))||0);
-    stateOptions.forEach(opt=>{
-      const b=document.createElement('button'); b.type='button';
-      b.className='chip'+(saved===opt.v?' active':''); b.textContent=opt.label;
-      b.onclick=()=>{ localStorage.setItem(STATE_KEY(vd,type), String(opt.v)); renderStates(); scheduleSave(); };
-      wrap.appendChild(b);
-    });
-    box.appendChild(wrap);
-    return box;
+  /* ====== Состояние ====== */
+  const stateGrid=document.getElementById('stateGrid');
+  const stateOptions=[{v:1,label:'😖 1'},{v:2,label:'😕 2'},{v:3,label:'😐 3'},{v:4,label:'🙂 4'},{v:5,label:'😄 5'}];
+  function stateRow(title,type){
+    const vd=getViewDate(); const box=document.createElement('div'); box.className='stateRow';
+    const h=document.createElement('div'); h.className='stateTitle'; h.textContent=title; box.appendChild(h);
+    const wrap=document.createElement('div'); wrap.className='chips'; const saved=parseInt(localStorage.getItem(STATE_KEY(vd,type))||0);
+    stateOptions.forEach(o=>{ const b=document.createElement('button'); b.type='button'; b.className='chip'+(saved===o.v?' active':''); b.textContent=o.label; b.onclick=()=>{ localStorage.setItem(STATE_KEY(vd,type),String(o.v)); renderStates(); scheduleSave(); }; wrap.appendChild(b);});
+    box.appendChild(wrap); return box;
   }
-  function renderStates(){
-    stateGrid.innerHTML='';
-    stateGrid.appendChild(renderStateRow('Эмоционально', 'mood'));
-    stateGrid.appendChild(renderStateRow('Физически', 'body'));
-  }
+  function renderStates(){ stateGrid.innerHTML=''; stateGrid.appendChild(stateRow('Эмоционально','mood')); stateGrid.appendChild(stateRow('Физически','body')); }
 
-  // ===== Здоровье и дисциплина (утро) =====
-  const healthGrid = document.getElementById('healthGrid');
-  const alphaGrid  = document.getElementById('alphaGrid');
-  const PULSE_KEY  = (date)=> `metric:${ymd(date)}:pulse`;
-  const WEIGHT_KEY = (date)=> `metric:${ymd(date)}:weight`;
-  const ERECT_KEY  = (date)=> `metric:${ymd(date)}:erection`; // 1/0
-  const ALPHA_KEY  = (date,idx)=> `alpha:${ymd(date)}:${idx}`;
-  const alphaItems = ['Быт (порядок)','Спорт (для стаи)','Ответственность (без оправданий)','Деньги (3 способа заработать)'];
-
+  /* ====== Здоровье/Альфа ====== */
+  const healthGrid=document.getElementById('healthGrid'); const alphaGrid=document.getElementById('alphaGrid');
+  const alphaItems=['Быт (порядок)','Спорт (для стаи)','Ответственность (без оправданий)','Деньги (3 способа заработать)'];
   function renderHealth(){
-    const vd = getViewDate();
-    healthGrid.innerHTML='';
-
+    const vd=getViewDate(); healthGrid.innerHTML='';
     // Пульс
-    const r1=document.createElement('div'); r1.className='row';
-    const t1=document.createElement('div'); t1.className='time'; t1.textContent='Пульс утром'; r1.appendChild(t1);
-    const l1=document.createElement('div'); l1.className='label';
-    const inp1=document.createElement('input'); inp1.type='number'; inp1.min='30'; inp1.max='150'; inp1.placeholder='уд/мин';
-    inp1.value = localStorage.getItem(PULSE_KEY(vd)) || '';
-    inp1.onchange=()=>{ localStorage.setItem(PULSE_KEY(vd), String(inp1.value||'')); scheduleSave(); };
-    l1.appendChild(inp1); r1.appendChild(l1); r1.appendChild(document.createElement('div'));
-    healthGrid.appendChild(r1);
-
+    let r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Пульс утром</div>`; let c=document.createElement('div'); c.className='label';
+    let i=document.createElement('input'); i.type='number'; i.min='30'; i.max='150'; i.placeholder='уд/мин'; i.value=localStorage.getItem(PULSE_KEY(vd))||''; i.onchange=()=>{localStorage.setItem(PULSE_KEY(vd),String(i.value||'')); scheduleSave();}; c.appendChild(i); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
     // Вес
-    const r3=document.createElement('div'); r3.className='row';
-    const t3=document.createElement('div'); t3.className='time'; t3.textContent='Вес (кг)'; r3.appendChild(t3);
-    const l3=document.createElement('div'); l3.className='label';
-    const inp3=document.createElement('input'); inp3.type='number'; inp3.min='40'; inp3.max='200'; inp3.step='0.1'; inp3.placeholder='кг';
-    inp3.value = localStorage.getItem(WEIGHT_KEY(vd)) || '';
-    inp3.onchange=()=>{ localStorage.setItem(WEIGHT_KEY(vd), String(inp3.value||'')); scheduleSave(); };
-    l3.appendChild(inp3); r3.appendChild(l3); r3.appendChild(document.createElement('div'));
-    healthGrid.appendChild(r3);
-
+    r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Вес (кг)</div>`; c=document.createElement('div'); c.className='label';
+    i=document.createElement('input'); i.type='number'; i.min='40'; i.max='200'; i.step='0.1'; i.placeholder='кг'; i.value=localStorage.getItem(WEIGHT_KEY(vd))||''; i.onchange=()=>{localStorage.setItem(WEIGHT_KEY(vd),String(i.value||'')); scheduleSave();}; c.appendChild(i); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
     // Эрекция
-    const r2=document.createElement('div'); r2.className='row';
-    const t2=document.createElement('div'); t2.className='time'; t2.textContent='Эрекция'; r2.appendChild(t2);
-    const l2=document.createElement('div'); l2.className='label';
-    const wrap=document.createElement('div'); wrap.className='chips';
-    const saved = parseInt(localStorage.getItem(ERECT_KEY(vd)) || 0);
-    [['Да',1],['Нет',0]].forEach(([txt,val])=>{
-      const b=document.createElement('button'); b.type='button';
-      b.className='chip'+(saved===val?' active':''); b.textContent=txt;
-      b.onclick=()=>{ localStorage.setItem(ERECT_KEY(vd), String(val)); renderHealth(); scheduleSave(); };
-      wrap.appendChild(b);
-    });
-    l2.appendChild(wrap); r2.appendChild(l2); r2.appendChild(document.createElement('div'));
-    healthGrid.appendChild(r2);
+    r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Эрекция</div>`; c=document.createElement('div'); c.className='label'; const wrap=document.createElement('div'); wrap.className='chips'; const saved=parseInt(localStorage.getItem(ERECT_KEY(vd))||0);
+    [['Да',1],['Нет',0]].forEach(([txt,val])=>{ const b=document.createElement('button'); b.type='button'; b.className='chip'+(saved===val?' active':''); b.textContent=txt; b.onclick=()=>{localStorage.setItem(ERECT_KEY(vd),String(val)); renderHealth(); scheduleSave();}; wrap.appendChild(b);}); c.appendChild(wrap); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
   }
-
   function renderAlpha(){
-    const vd = getViewDate();
-    alphaGrid.innerHTML='';
-    alphaItems.forEach((label,idx)=>{
-      const key = ALPHA_KEY(vd, idx);
-      const saved = localStorage.getItem(key) === '1';
-      const row = makeRow(idx===0?'Альфа 30 дней':'', label, saved, (val)=>{
-        localStorage.setItem(key, val?'1':'0'); scheduleSave();
-      }, key);
-      alphaGrid.appendChild(row);
+    const vd=getViewDate(); alphaGrid.innerHTML='';
+    alphaItems.forEach((lab,idx)=>{ const key=ALPHA_KEY(vd,idx); const saved=localStorage.getItem(key)==='1';
+      alphaGrid.appendChild(makeRow(idx===0?'Альфа 30 дней':'', lab, saved, (v)=>{ localStorage.setItem(key,v?'1':'0'); scheduleSave(); }, key));
     });
   }
 
-  // ===== мини-графики за неделю =====
+  /* ====== Мини-графики недели ====== */
   function getWeekDates(){ const s=viewWeekStart; return Array.from({length:7},(_,i)=>addDays(s,i)); }
   function collectMetricSeries(keyFn){ return getWeekDates().map(d=>{ const v=localStorage.getItem(keyFn(d)); return v==null||v===''?null:Number(v); }); }
   function renderSpark(containerId, series, opts){
@@ -508,7 +402,7 @@
     const vals=series.filter(v=>v!=null); if(!vals.length){ el.appendChild(svg); return; }
     let min=opts.min??Math.min(...vals), max=opts.max??Math.max(...vals); if(min===max){min-=1;max+=1;}
     const path=document.createElementNS(svgNS,'path'); let d='';
-    series.forEach((v,i)=>{ const x=pad+xs[i]*(w-2*pad); const y=v==null?null:(h-pad)-((v-min)/(max-min))*(h-2*pad); d+=(i===0?'M':'L')+(x+','+(y??(h-pad)))+' '; }); path.setAttribute('d',d.trim()); svg.appendChild(path);
+    series.forEach((v,i)=>{ const x=pad+xs[i]*(w-2*pad); const y=v==null?(h-pad):(h-pad)-((v-min)/(max-min))*(h-2*pad); d+=(i===0?'M':'L')+`${x},${y} `; }); path.setAttribute('d',d.trim()); svg.appendChild(path);
     const last=[...series.keys()].reverse().find(i=>series[i]!=null); if(last!=null){ const xv=pad+xs[last]*(w-2*pad); const yv=(h-pad)-((series[last]-min)/(max-min))*(h-2*pad); const dot=document.createElementNS(svgNS,'circle'); dot.setAttribute('cx',xv);dot.setAttribute('cy',yv);dot.setAttribute('r',2.5);dot.setAttribute('class','dot'); svg.appendChild(dot); }
     el.appendChild(svg);
   }
@@ -521,124 +415,85 @@
     renderSpark('pulseSpark', pSeries, {min:40,max:120});
   }
 
-  // ===== Экспорт/импорт =====
+  /* ====== Экспорт/импорт ====== */
   document.getElementById('exportBtn').onclick=()=>{
-    const data={};
-    for(let i=0;i<localStorage.length;i++){
-      const k=localStorage.key(i);
-      if(k&&(k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k.startsWith('state:')||k.startsWith('metric:')||k.startsWith('alpha:')||k==='theme'||k==='wakeTime'||k==='sleepTime')) data[k]=localStorage.getItem(k);
+    const data={}; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k) continue;
+      if(k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k.startsWith('state:')||k.startsWith('metric:')||k.startsWith('alpha:')||k==='theme'||k==='wakeTime'||k==='sleepTime'){ data[k]=localStorage.getItem(k); }
     }
     const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='tracker-backup.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
   };
-  document.getElementById('importInput').onchange=async(e)=>{
-    const file=e.target.files[0]; if(!file)return; const text=await file.text();
-    try{ const data=JSON.parse(text); Object.entries(data).forEach(([k,v])=>{ if(k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k.startsWith('state:')||k.startsWith('metric:')||k.startsWith('alpha:')||k==='theme'||k==='wakeTime'||k==='sleepTime') localStorage.setItem(k,String(v)); });
+  document.getElementById('importInput').onchange=async(e)=>{ const f=e.target.files[0]; if(!f) return; const t=await f.text();
+    try{ const data=JSON.parse(t); Object.entries(data).forEach(([k,v])=>{ if(k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k.startsWith('state:')||k.startsWith('metric:')||k.startsWith('alpha:')||k==='theme'||k==='wakeTime'||k==='sleepTime') localStorage.setItem(k,String(v));});
       applyTheme(localStorage.getItem('theme')||'dark'); loadTimes(); renderAll(); alert('Импорт завершён ✅'); scheduleSave();
-    }catch{ alert('Ошибка импорта'); }
-  };
+    }catch{ alert('Ошибка импорта'); } };
 
-  // ===== Сброс дня/Сохранить =====
+  /* ====== Сброс/Сохранить ====== */
   document.getElementById('resetDayBtn').onclick=()=>{
     const vd=getViewDate();
     for(let i=0;i<baseDay.length;i++) localStorage.removeItem(DAY_KEY(vd,i));
     for(let i=0;i<goalsDaily.length;i++) localStorage.removeItem(GOAL_KEY(vd,i));
-    const meals=['Завтрак','Обед','Ужин','Перекусы']; const fields=['Калории (ккал)','Белки (г)','Жиры (г)','Углеводы (г)'];
-    meals.forEach(meal=> fields.forEach(f=> localStorage.removeItem(NF_KEY(vd,meal,f)) ));
-    ['mood','body'].forEach(t=> localStorage.removeItem(`state:${ymd(vd)}:${t}`));
-    ['pulse','weight','erection'].forEach(m=> localStorage.removeItem(`metric:${ymd(vd)}:${m}`));
-    for(let i=0;i<4;i++) localStorage.removeItem(`alpha:${ymd(vd)}:${i}`);
+    ['Завтрак','Обед','Ужин','Перекусы'].forEach(m=>['Калории (ккал)','Белки (г)','Жиры (г)','Углеводы (г)'].forEach(f=>localStorage.removeItem(NF_KEY(vd,m,f))));
+    ['mood','body'].forEach(t=> localStorage.removeItem(STATE_KEY(vd,t)));
+    [PULSE_KEY,WEIGHT_KEY,ERECT_KEY].forEach(fn=> localStorage.removeItem(fn(vd)));
+    for(let i=0;i<4;i++) localStorage.removeItem(ALPHA_KEY(vd,i));
     renderAll(); scheduleSave();
   };
   document.getElementById('saveNearBtn').onclick=()=> syncSaveFor(getViewDate());
 
-  // ===== PWA =====
-  (function(){
-    const swCode=`self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open('tracker-v1').then(c=>c.addAll(['./'])))});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))})`;
-    const blob=new Blob([swCode],{type:'text/javascript'}); const swUrl=URL.createObjectURL(blob); if('serviceWorker'in navigator){ navigator.serviceWorker.register(swUrl); }
-    let deferredPrompt; const btn=document.getElementById('addToHome');
-    window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault(); deferredPrompt=e; btn.style.display='inline-flex';});
-    btn.onclick=async()=>{ if(!deferredPrompt)return; deferredPrompt.prompt(); const {outcome}=await deferredPrompt.userChoice; if(outcome==='accepted') btn.style.display='none'; deferredPrompt=null; };
-  })();
+  /* ====== PWA ====== */
+  (function(){ const sw=`self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open('tracker-v1').then(c=>c.addAll(['./'])))});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))})`; const blob=new Blob([sw],{type:'text/javascript'}); const url=URL.createObjectURL(blob); if('serviceWorker' in navigator){ navigator.serviceWorker.register(url); }
+    let dp; const btn=document.getElementById('addToHome'); window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); dp=e; btn.style.display='inline-flex'; }); btn.onclick=async()=>{ if(!dp) return; dp.prompt(); await dp.userChoice; btn.style.display='none'; dp=null; }; })();
 
-  // ===== Supabase sync (по выбранной дате) =====
-  async function sbGetUser(){ const { data:{ user } } = await sb.auth.getUser(); return user; }
-  function collectDailyKeysFor(dateStr){
-    const daily={};
-    for(let i=0;i<localStorage.length;i++){
-      const k=localStorage.key(i); if(!k) continue;
-      if(k.startsWith('day:'+dateStr)||k.startsWith('goal:'+dateStr)||k.startsWith('n:'+dateStr)||k.startsWith('state:'+dateStr)||k.startsWith('metric:'+dateStr)||k.startsWith('alpha:'+dateStr)) daily[k]=localStorage.getItem(k);
-    }
-    return daily;
+  /* ====== Supabase sync (по выбранной дате) ====== */
+  async function sbGetUser(){ const {data:{user}}=await sb.auth.getUser(); return user; }
+  function collectDailyFor(d){
+    const s=ymd(d), out={};
+    for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k) continue;
+      if(k.startsWith('day:'+s)||k.startsWith('goal:'+s)||k.startsWith('n:'+s)||k.startsWith('state:'+s)||k.startsWith('metric:'+s)||k.startsWith('alpha:'+s)) out[k]=localStorage.getItem(k);
+    } return out;
   }
-  function collectWeeklyKeysFor(weekId){
-    const weekly={};
-    for(let i=0;i<localStorage.length;i++){
-      const k=localStorage.key(i); if(!k) continue;
-      if(k.startsWith('wgoal:'+weekId+':')) weekly[k]=localStorage.getItem(k);
-    }
-    return weekly;
-  }
-  function applyDaily(data){ Object.entries(data||{}).forEach(([k,v])=> localStorage.setItem(k,v)); }
-  function applyWeekly(data){ Object.entries(data||{}).forEach(([k,v])=> localStorage.setItem(k,v)); }
+  function collectWeeklyFor(d){ const w=isoWeek(d), out={}; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k?.startsWith('wgoal:'+w+':')) out[k]=localStorage.getItem(k);} return out; }
+  function applyData(map){ Object.entries(map||{}).forEach(([k,v])=>localStorage.setItem(k,v)); }
 
-  async function syncLoadFor(dateObj){
+  async function syncLoadFor(d){
     const user=await sbGetUser(); if(!user) return;
-    const dstr=ymd(dateObj); const wk=isoWeek(dateObj);
-    const {data:drow}=await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd',dstr).maybeSingle(); applyDaily(drow?.data);
-    const {data:wrow}=await sb.from('weekly_data').select('data').eq('user_id',user.id).eq('week_id',wk).maybeSingle(); applyWeekly(wrow?.data);
+    const s=ymd(d), w=isoWeek(d);
+    const {data:drow}=await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd',s).maybeSingle(); applyData(drow?.data);
+    const {data:wrow}=await sb.from('weekly_data').select('data').eq('user_id',user.id).eq('week_id',w).maybeSingle(); applyData(wrow?.data);
     renderAll();
   }
-  async function syncSaveFor(dateObj){
+  async function syncSaveFor(d){
     const user=await sbGetUser(); if(!user) return;
-    const dstr=ymd(dateObj); const wk=isoWeek(dateObj);
-    const dailyData=collectDailyKeysFor(dstr); const weeklyData=collectWeeklyKeysFor(wk);
-    if(Object.keys(dailyData).length){ await sb.from('daily_data').upsert({ user_id:user.id, ymd:dstr, data: dailyData, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' }); }
-    if(Object.keys(weeklyData).length){ await sb.from('weekly_data').upsert({ user_id:user.id, week_id:wk, data: weeklyData, updated_at:new Date().toISOString() }, { onConflict:'user_id,week_id' }); }
+    const s=ymd(d), w=isoWeek(d);
+    const daily=collectDailyFor(d), weekly=collectWeeklyFor(d);
+    if(Object.keys(daily).length)  await sb.from('daily_data').upsert({user_id:user.id, ymd:s, data:daily,  updated_at:new Date().toISOString()},{onConflict:'user_id,ymd'});
+    if(Object.keys(weekly).length) await sb.from('weekly_data').upsert({user_id:user.id, week_id:w, data:weekly, updated_at:new Date().toISOString()},{onConflict:'user_id,week_id'});
   }
-  let saveTimer; function scheduleSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ syncSaveFor(getViewDate()); },800); }
-
-  try{
-    sb.channel('changes')
+  let saveTimer; function scheduleSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>syncSaveFor(getViewDate()),800); }
+  try{ sb.channel('changes')
       .on('postgres_changes',{event:'*',schema:'public',table:'daily_data'},()=>syncLoadFor(getViewDate()))
       .on('postgres_changes',{event:'*',schema:'public',table:'weekly_data'},()=>syncLoadFor(getViewDate()))
-      .subscribe();
-  }catch{}
+      .subscribe(); }catch(e){}
 
-  // ===== Auth =====
-  document.getElementById('loginBtn').onclick = async ()=>{
-    const email=document.getElementById('emailInput').value.trim();
-    if(!email) return alert('Введи email');
-    try{
-      const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.href } });
-      if(error) alert('Ошибка входа: '+error.message); else alert('Письмо со ссылкой отправлено на email.');
-    }catch{ alert('Сетевая ошибка (Failed to fetch). Проверь Site/Redirect URLs, ключи и AdBlock/VPN.'); }
+  /* ====== Auth ====== */
+  document.getElementById('loginBtn').onclick=async()=>{
+    const email=document.getElementById('emailInput').value.trim(); if(!email) return alert('Введи email');
+    try{ const {error}=await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.href } }); if(error) alert('Ошибка входа: '+error.message); else alert('Письмо со ссылкой отправлено на email.'); }
+    catch{ alert('Сетевая ошибка. Проверь Site URL/Redirect URLs и блокировщики.'); }
   };
-  document.getElementById('logoutBtn').onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
-  sb.auth.onAuthStateChange(async (_e, session)=>{
-    const user=session?.user;
-    document.getElementById('logoutBtn').style.display=user?'inline-flex':'none';
-    document.getElementById('whoami').textContent=user?('• '+(user.email||user.id)):'';
-    if(user) await syncLoadFor(getViewDate());
-  });
+  document.getElementById('logoutBtn').onclick=async()=>{ await sb.auth.signOut(); location.reload(); };
 
-  // Показ «Итоги недели» только в воскресенье выбранной даты
-  function toggleWeeklyVisibility(){
-    const sec = document.getElementById('weeklySection');
-    if (!sec) return;
-    const isSunday = (getViewDate().getDay() === 0); // 0 — воскресенье
-    sec.style.display = isSunday ? 'block' : 'none';
-  }
+  // «Итоги недели» только в воскресенье выбранной даты
+  function toggleWeeklyVisibility(){ const sec=document.getElementById('weeklySection'); sec.style.display=(getViewDate().getDay()===0)?'block':'none'; }
 
-  function renderAll(){
-    renderTabs(); renderSchedule(); renderMeals(); renderTotals();
-    renderDailyGoals(); renderWeeklyGoals(); renderStates(); renderHealth(); renderAlpha();
-    renderHealthWeeklyCard(); updateProgress(); toggleWeeklyVisibility();
-  }
+  function renderAll(){ renderTabs(); renderSchedule(); renderMeals(); renderTotals(); renderDailyGoals(); renderWeeklyGoals(); renderStates(); renderHealth(); renderAlpha(); renderHealthWeeklyCard(); updateProgress(); toggleWeeklyVisibility(); }
   loadTimes(); renderAll();
 
   // Навигация недель
-  document.getElementById('prevWeekBtn').onclick = ()=>{ viewWeekStart = addDays(viewWeekStart, -7); renderAll(); syncLoadFor(getViewDate()); };
-  document.getElementById('nextWeekBtn').onclick = ()=>{ viewWeekStart = addDays(viewWeekStart, 7);  renderAll(); syncLoadFor(getViewDate()); };
+  document.getElementById('prevWeekBtn').onclick=()=>{ viewWeekStart=addDays(viewWeekStart,-7); renderAll(); syncLoadFor(getViewDate()); };
+  document.getElementById('nextWeekBtn').onclick=()=>{ viewWeekStart=addDays(viewWeekStart, 7); renderAll(); syncLoadFor(getViewDate()); };
+
+  sb.auth.onAuthStateChange(async (_e, session)=>{ const u=session?.user; document.getElementById('logoutBtn').style.display=u?'inline-flex':'none'; document.getElementById('whoami').textContent=u?('• '+(u.email||u.id)) : ''; if(u) await syncLoadFor(getViewDate()); });
   </script>
 </body>
 </html>
