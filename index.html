@@ -67,6 +67,7 @@
       .kpi{grid-template-columns:1fr 1fr}
     }
   </style>
+
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -105,6 +106,14 @@
       </div>
 
       <div class="tabs" id="dayTabs"></div>
+
+      <!-- Навигация по неделям + Сохранить -->
+      <div class="flex" id="weekNav" style="margin-top:6px">
+        <button class="btn" id="prevWeekBtn">⟵ Неделя</button>
+        <div class="pill" id="weekLabel">Неделя —</div>
+        <button class="btn" id="nextWeekBtn">Неделя ⟶</button>
+        <button class="btn primary" id="saveNowBtn" style="margin-left:auto">Сохранить</button>
+      </div>
     </div>
   </header>
 
@@ -133,11 +142,11 @@
       <div class="grid" id="dailyGoals"></div>
     </section>
 
-  <section class="card" id="weeklySection">
-  <h3 style="margin-top:0">Итоги недели</h3>
-  <div class="grid" id="weeklyGoals"></div>
-  <div class="small muted" style="margin-top:8px">Неделя считается по ISO (пн–вс). «Сброс дня» чистит весь текущий день (расписание, цели и питание).</div>
-</section>
+    <section class="card" id="weeklySection">
+      <h3 style="margin-top:0">Итоги недели</h3>
+      <div class="grid" id="weeklyGoals"></div>
+      <div class="small muted" style="margin-top:8px">Неделя считается по ISO (пн–вс). «Сброс дня» чистит весь текущий день (расписание, цели и питание).</div>
+    </section>
 
     <section class="card">
       <h3 style="margin-top:0">Состояние за день</h3>
@@ -150,7 +159,6 @@
       <div class="grid" id="healthGrid"></div>
       <div class="grid" id="alphaGrid"></div>
     </section>
-
   </main>
 
   <footer class="sticky">
@@ -160,6 +168,7 @@
     </div>
   </footer>
 
+  <!-- Настройки -->
   <div class="settings" id="settings" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:16px">
     <div class="box" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;max-width:420px;width:100%">
       <h3 style="margin:0 0 8px">Настройки</h3>
@@ -180,7 +189,19 @@
   const pad=(n)=> String(n).padStart(2,'0');
   const ymd=(d)=> `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   function isoWeek(d){ const t = new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-day+3); const first=new Date(Date.UTC(t.getUTCFullYear(),0,4)); const w=1+Math.round(((t-first)/86400000-3+((first.getUTCDay()+6)%7))/7); return `${t.getUTCFullYear()}-W${pad(w)}`;}
-  const today = new Date(); let currentDay = (today.getDay()+6)%7;
+
+  // Базовая "сегодня" — только чтобы вычислить старт
+  const today = new Date();
+
+  // Текущая просматриваемая неделя/день
+  function startOfISOWeek(d){
+    const t = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const day = (t.getDay()+6)%7; t.setDate(t.getDate()-day); t.setHours(0,0,0,0); return t;
+  }
+  function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+  let viewWeekStart = startOfISOWeek(today); // понедельник
+  let currentDay = (today.getDay()+6)%7;     // 0=Пн ... 6=Вс
+  function getViewDate(){ return addDays(viewWeekStart, currentDay); }
 
   // ========= Тема и настройки =========
   const root=document.documentElement, themeBtn=document.getElementById('themeBtn');
@@ -236,16 +257,19 @@
     DAYS_FULL.forEach((name,i)=>{
       const b=document.createElement('button');
       b.className='tab'+(i===currentDay?' active':''); b.textContent=name;
-      b.onclick=()=>{ currentDay=i; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); b.classList.add('active'); renderAll(); };
+      b.onclick=()=>{ currentDay=i; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); b.classList.add('active'); renderAll(); syncLoadFor(getViewDate()); };
       tabs.appendChild(b);
     });
-    document.getElementById('dateLine').textContent = `${DAYS_FULL[currentDay]} • ${ymd(today)}`;
+    const vd = getViewDate();
+    document.getElementById('dateLine').textContent = `${DAYS_FULL[currentDay]} • ${ymd(vd)}`;
+    document.getElementById('weekLabel').textContent = `Неделя ${isoWeek(vd)}`;
   }
 
   function renderSchedule(){
+    const vd = getViewDate();
     grid.innerHTML=''; sportPill.textContent = `Спорт дня: ${sportPlan[currentDay]}`;
     baseDay.forEach((item,idx)=>{
-      const key = DAY_KEY(today, idx);
+      const key = DAY_KEY(vd, idx);
       const saved = localStorage.getItem(key) === '1';
       const row = makeRow(item[0], item[1], saved, (val)=>{
         localStorage.setItem(key, val?'1':'0');
@@ -256,9 +280,10 @@
   }
 
   function renderDailyGoals(){
+    const vd = getViewDate();
     daily.innerHTML='';
     goalsDaily.forEach((label,idx)=>{
-      const key = GOAL_KEY(today, idx);
+      const key = GOAL_KEY(vd, idx);
       const saved = localStorage.getItem(key) === '1';
       const row = makeRow('—', label, saved, (val)=>{
         localStorage.setItem(key, val?'1':'0');
@@ -270,7 +295,7 @@
 
   function renderWeeklyGoals(){
     weekly.innerHTML='';
-    const w = isoWeek(today);
+    const w = isoWeek(getViewDate());
     goalsWeekly.forEach((label,idx)=>{
       const key = WEEK_KEY(w, idx);
       const saved = localStorage.getItem(key) === '1';
@@ -283,15 +308,16 @@
   }
 
   function updateProgress(){
+    const vd = getViewDate();
     const dayTotal = baseDay.length + goalsDaily.length;
     let dayDone = 0;
-    for(let i=0;i<baseDay.length;i++) if(localStorage.getItem(DAY_KEY(today,i))==='1') dayDone++;
-    for(let i=0;i<goalsDaily.length;i++) if(localStorage.getItem(GOAL_KEY(today,i))==='1') dayDone++;
+    for(let i=0;i<baseDay.length;i++) if(localStorage.getItem(DAY_KEY(vd,i))==='1') dayDone++;
+    for(let i=0;i<goalsDaily.length;i++) if(localStorage.getItem(GOAL_KEY(vd,i))==='1') dayDone++;
     const dayPct = Math.round(100*dayDone/Math.max(1,dayTotal));
     document.getElementById('doneToday').textContent = dayPct+'%';
     document.getElementById('progToday').value = dayPct;
 
-    const w = isoWeek(today);
+    const w = isoWeek(vd);
     const wTotal = goalsWeekly.length;
     let wDone = 0;
     for(let i=0;i<goalsWeekly.length;i++) if(localStorage.getItem(WEEK_KEY(w,i))==='1') wDone++;
@@ -307,6 +333,7 @@
   function setNum(k,v){ localStorage.setItem(k, String(v)); }
 
   function renderMeals(){
+    const vd = getViewDate();
     mealsGrid.innerHTML='';
     const header=document.createElement('div'); header.className='row';
     header.innerHTML = '<div class="time">Приём</div><div class="label">КБЖУ</div><div></div>';
@@ -317,7 +344,7 @@
       const c2=document.createElement('div'); c2.className='label';
       const wrap=document.createElement('div'); wrap.className='flex';
       N_FIELDS.forEach(field=>{
-        const key = NF_KEY(today, meal, field);
+        const key = NF_KEY(vd, meal, field);
         const inp=document.createElement('input'); inp.type='number'; inp.min='0'; inp.placeholder='0'; inp.value=getNum(key);
         inp.onchange=()=>{ setNum(key, parseInt(inp.value||0)); renderTotals(); scheduleSave(); };
         const lbl=document.createElement('span'); lbl.className='muted small'; lbl.textContent=field.split(' ')[0]+':';
@@ -331,9 +358,10 @@
   }
 
   function renderTotals(){
+    const vd = getViewDate();
     totalsGrid.innerHTML='';
     const sums={ 'Калории (ккал)':0,'Белки (г)':0,'Жиры (г)':0,'Углеводы (г)':0 };
-    MEALS.forEach(meal=> N_FIELDS.forEach(field=> sums[field]+= getNum(NF_KEY(today, meal, field)) ));
+    MEALS.forEach(meal=> N_FIELDS.forEach(field=> sums[field]+= getNum(NF_KEY(vd, meal, field)) ));
     N_FIELDS.forEach((field)=>{
       const row=document.createElement('div'); row.className='row';
       const c1=document.createElement('div'); c1.className='time'; c1.textContent=field; row.appendChild(c1);
@@ -356,6 +384,7 @@
   const STATE_KEY = (date, type)=> `state:${ymd(date)}:${type}`; // type: mood|body
 
   function renderStateRow(title, type){
+    const vd = getViewDate();
     const box = document.createElement('div');
     box.className = 'stateRow';
 
@@ -366,12 +395,12 @@
 
     const wrap = document.createElement('div');
     wrap.className = 'chips';
-    const saved = parseInt(localStorage.getItem(STATE_KEY(today, type))||0);
+    const saved = parseInt(localStorage.getItem(STATE_KEY(vd, type))||0);
 
     stateOptions.forEach(opt=>{
       const b=document.createElement('button'); b.type='button';
       b.className='chip'+(saved===opt.v?' active':''); b.textContent=opt.label;
-      b.onclick=()=>{ localStorage.setItem(STATE_KEY(today,type), String(opt.v)); renderStates(); scheduleSave(); };
+      b.onclick=()=>{ localStorage.setItem(STATE_KEY(vd,type), String(opt.v)); renderStates(); scheduleSave(); };
       wrap.appendChild(b);
     });
     box.appendChild(wrap);
@@ -387,33 +416,46 @@
   // ===== Здоровье и дисциплина (утро) =====
   const healthGrid = document.getElementById('healthGrid');
   const alphaGrid  = document.getElementById('alphaGrid');
-  const PULSE_KEY = (date)=> `metric:${ymd(date)}:pulse`;
-  const ERECT_KEY = (date)=> `metric:${ymd(date)}:erection`; // 1/0
-  const ALPHA_KEY = (date,idx)=> `alpha:${ymd(date)}:${idx}`;
+  const PULSE_KEY  = (date)=> `metric:${ymd(date)}:pulse`;
+  const WEIGHT_KEY = (date)=> `metric:${ymd(date)}:weight`;
+  const ERECT_KEY  = (date)=> `metric:${ymd(date)}:erection`; // 1/0
+  const ALPHA_KEY  = (date,idx)=> `alpha:${ymd(date)}:${idx}`;
   const alphaItems = ['Быт (порядок)','Спорт (для стаи)','Ответственность (без оправданий)','Деньги (3 способа заработать)'];
 
   function renderHealth(){
+    const vd = getViewDate();
     healthGrid.innerHTML='';
+
     // Пульс
     const r1=document.createElement('div'); r1.className='row';
     const t1=document.createElement('div'); t1.className='time'; t1.textContent='Пульс утром'; r1.appendChild(t1);
     const l1=document.createElement('div'); l1.className='label';
-    const inp=document.createElement('input'); inp.type='number'; inp.min='30'; inp.max='150'; inp.placeholder='уд/мин';
-    inp.value = localStorage.getItem(PULSE_KEY(today)) || '';
-    inp.onchange=()=>{ localStorage.setItem(PULSE_KEY(today), String(inp.value||'')); scheduleSave(); };
-    l1.appendChild(inp); r1.appendChild(l1); r1.appendChild(document.createElement('div'));
+    const inp1=document.createElement('input'); inp1.type='number'; inp1.min='30'; inp1.max='150'; inp1.placeholder='уд/мин';
+    inp1.value = localStorage.getItem(PULSE_KEY(vd)) || '';
+    inp1.onchange=()=>{ localStorage.setItem(PULSE_KEY(vd), String(inp1.value||'')); scheduleSave(); };
+    l1.appendChild(inp1); r1.appendChild(l1); r1.appendChild(document.createElement('div'));
     healthGrid.appendChild(r1);
+
+    // Вес
+    const r3=document.createElement('div'); r3.className='row';
+    const t3=document.createElement('div'); t3.className='time'; t3.textContent='Вес (кг)'; r3.appendChild(t3);
+    const l3=document.createElement('div'); l3.className='label';
+    const inp3=document.createElement('input'); inp3.type='number'; inp3.min='40'; inp3.max='200'; inp3.step='0.1'; inp3.placeholder='кг';
+    inp3.value = localStorage.getItem(WEIGHT_KEY(vd)) || '';
+    inp3.onchange=()=>{ localStorage.setItem(WEIGHT_KEY(vd), String(inp3.value||'')); scheduleSave(); };
+    l3.appendChild(inp3); r3.appendChild(l3); r3.appendChild(document.createElement('div'));
+    healthGrid.appendChild(r3);
 
     // Эрекция
     const r2=document.createElement('div'); r2.className='row';
     const t2=document.createElement('div'); t2.className='time'; t2.textContent='Эрекция'; r2.appendChild(t2);
     const l2=document.createElement('div'); l2.className='label';
     const wrap=document.createElement('div'); wrap.className='chips';
-    const saved = parseInt(localStorage.getItem(ERECT_KEY(today)) || 0); // 1/0
+    const saved = parseInt(localStorage.getItem(ERECT_KEY(vd)) || 0); // 1/0
     [['Да',1],['Нет',0]].forEach(([txt,val])=>{
       const b=document.createElement('button'); b.type='button';
       b.className='chip'+(saved===val?' active':''); b.textContent=txt;
-      b.onclick=()=>{ localStorage.setItem(ERECT_KEY(today), String(val)); renderHealth(); scheduleSave(); };
+      b.onclick=()=>{ localStorage.setItem(ERECT_KEY(vd), String(val)); renderHealth(); scheduleSave(); };
       wrap.appendChild(b);
     });
     l2.appendChild(wrap); r2.appendChild(l2); r2.appendChild(document.createElement('div'));
@@ -421,10 +463,10 @@
   }
 
   function renderAlpha(){
+    const vd = getViewDate();
     alphaGrid.innerHTML='';
-    // заголовок в левой колонке + чекбоксы справа
     alphaItems.forEach((label,idx)=>{
-      const key = ALPHA_KEY(today, idx);
+      const key = ALPHA_KEY(vd, idx);
       const saved = localStorage.getItem(key) === '1';
       const row = makeRow(idx===0?'Альфа 30 дней':'', label, saved, (val)=>{
         localStorage.setItem(key, val?'1':'0'); scheduleSave();
@@ -459,17 +501,18 @@
     }catch(err){ alert('Ошибка импорта'); }
   };
 
-  // ===== Сброс дня =====
+  // ===== Сброс дня (по выбранной дате) =====
   document.getElementById('resetDayBtn').onclick = ()=>{
-    for(let i=0;i<baseDay.length;i++) localStorage.removeItem(DAY_KEY(today,i));
-    for(let i=0;i<goalsDaily.length;i++) localStorage.removeItem(GOAL_KEY(today,i));
+    const vd = getViewDate();
+    for(let i=0;i<baseDay.length;i++) localStorage.removeItem(DAY_KEY(vd,i));
+    for(let i=0;i<goalsDaily.length;i++) localStorage.removeItem(GOAL_KEY(vd,i));
     const meals = ['Завтрак','Обед','Ужин','Перекусы']; const fields=['Калории (ккал)','Белки (г)','Жиры (г)','Углеводы (г)'];
-    meals.forEach(meal=> fields.forEach(f=> localStorage.removeItem(NF_KEY(today,meal,f)) ));
-    // состояние/метрики/альфа
-    ['mood','body'].forEach(t=> localStorage.removeItem(`state:${ymd(today)}:${t}`));
-    localStorage.removeItem(`metric:${ymd(today)}:pulse`);
-    localStorage.removeItem(`metric:${ymd(today)}:erection`);
-    for(let i=0;i<4;i++) localStorage.removeItem(`alpha:${ymd(today)}:${i}`);
+    meals.forEach(meal=> fields.forEach(f=> localStorage.removeItem(NF_KEY(vd,meal,f)) ));
+    ['mood','body'].forEach(t=> localStorage.removeItem(`state:${ymd(vd)}:${t}`));
+    localStorage.removeItem(`metric:${ymd(vd)}:pulse`);
+    localStorage.removeItem(`metric:${ymd(vd)}:weight`);
+    localStorage.removeItem(`metric:${ymd(vd)}:erection`);
+    for(let i=0;i<4;i++) localStorage.removeItem(`alpha:${ymd(vd)}:${i}`);
     renderAll(); scheduleSave();
   };
 
@@ -484,9 +527,9 @@
     btn.onclick = async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); const {outcome}=await deferredPrompt.userChoice; if(outcome==='accepted'){ btn.style.display='none'; } deferredPrompt=null; };
   })();
 
-  // ===== Supabase sync helpers =====
+  // ===== Supabase sync (по выбранной дате) =====
   async function sbGetUser(){ const { data:{ user } } = await sb.auth.getUser(); return user; }
-  function collectDailyKeys(dateStr){
+  function collectDailyKeysFor(dateStr){
     const daily={};
     for(let i=0;i<localStorage.length;i++){
       const k=localStorage.key(i); if(!k) continue;
@@ -495,28 +538,72 @@
     }
     return daily;
   }
+  function collectWeeklyKeysFor(weekId){
+    const weekly={};
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i); if(!k) continue;
+      if(k.startsWith('wgoal:'+weekId+':')) weekly[k]=localStorage.getItem(k);
+    }
+    return weekly;
+  }
   function applyDaily(data){ Object.entries(data||{}).forEach(([k,v])=> localStorage.setItem(k,v)); }
-  function collectWeeklyKeys(weekId){ const weekly={}; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k) continue; if(k.startsWith('wgoal:'+weekId+':')) weekly[k]=localStorage.getItem(k);} return weekly; }
   function applyWeekly(data){ Object.entries(data||{}).forEach(([k,v])=> localStorage.setItem(k,v)); }
-  const todayStr_sync = ymd(today); const weekId_sync = isoWeek(today);
-  async function syncLoadAll(){ const user=await sbGetUser(); if(!user) return; const {data:drow}=await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd',todayStr_sync).maybeSingle(); applyDaily(drow?.data); const {data:wrow}=await sb.from('weekly_data').select('data').eq('user_id',user.id).eq('week_id',weekId_sync).maybeSingle(); applyWeekly(wrow?.data); renderAll(); }
-  let saveTimer; function scheduleSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(syncSaveAll, 1200); }
-  async function syncSaveAll(){ const user=await sbGetUser(); if(!user) return; const dailyData=collectDailyKeys(todayStr_sync); const weeklyData=collectWeeklyKeys(weekId_sync); if(Object.keys(dailyData).length){ await sb.from('daily_data').upsert({ user_id:user.id, ymd:todayStr_sync, data: dailyData, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' }); } if(Object.keys(weeklyData).length){ await sb.from('weekly_data').upsert({ user_id:user.id, week_id:weekId_sync, data: weeklyData, updated_at:new Date().toISOString() }, { onConflict:'user_id,week_id' }); } }
-  try{ sb.channel('changes').on('postgres_changes',{event:'*',schema:'public',table:'daily_data'},()=>syncLoadAll()).on('postgres_changes',{event:'*',schema:'public',table:'weekly_data'},()=>syncLoadAll()).subscribe(); }catch(e){}
+
+  async function syncLoadFor(dateObj){
+    const user = await sbGetUser(); if(!user) return;
+    const dstr = ymd(dateObj); const wk = isoWeek(dateObj);
+    const {data:drow} = await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd',dstr).maybeSingle();
+    applyDaily(drow?.data);
+    const {data:wrow} = await sb.from('weekly_data').select('data').eq('user_id',user.id).eq('week_id',wk).maybeSingle();
+    applyWeekly(wrow?.data);
+    renderAll();
+  }
+
+  async function syncSaveFor(dateObj){
+    const user = await sbGetUser(); if(!user) return;
+    const dstr = ymd(dateObj); const wk = isoWeek(dateObj);
+    const dailyData = collectDailyKeysFor(dstr);
+    const weeklyData = collectWeeklyKeysFor(wk);
+    if(Object.keys(dailyData).length){
+      await sb.from('daily_data').upsert({ user_id:user.id, ymd:dstr, data: dailyData, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' });
+    }
+    if(Object.keys(weeklyData).length){
+      await sb.from('weekly_data').upsert({ user_id:user.id, week_id:wk, data: weeklyData, updated_at:new Date().toISOString() }, { onConflict:'user_id,week_id' });
+    }
+  }
+
+  let saveTimer;
+  function scheduleSave(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(()=>syncSaveFor(getViewDate()), 800);
+  }
+  document.getElementById('saveNowBtn').onclick = ()=> syncSaveFor(getViewDate());
+
+  // Realtime: подгружаем заново при изменениях
+  try{
+    sb.channel('changes')
+      .on('postgres_changes',{event:'*',schema:'public',table:'daily_data'},()=>syncLoadFor(getViewDate()))
+      .on('postgres_changes',{event:'*',schema:'public',table:'weekly_data'},()=>syncLoadFor(getViewDate()))
+      .subscribe();
+  }catch(e){}
 
   // ===== Auth UI =====
   document.getElementById('loginBtn').onclick = async ()=>{
     const email = document.getElementById('emailInput').value.trim();
     if(!email) return alert('Введи email');
-    const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.href } });
-    if(error) alert('Ошибка входа: '+error.message); else alert('Письмо со ссылкой отправлено на email.');
+    try{
+      const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.href } });
+      if(error) alert('Ошибка входа: '+error.message); else alert('Письмо со ссылкой отправлено на email.');
+    }catch(e){
+      alert('Сетевая ошибка (Failed to fetch). Проверь Site/Redirect URLs, ключи и AdBlock/VPN.');
+    }
   };
   document.getElementById('logoutBtn').onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
   sb.auth.onAuthStateChange(async (e, session)=>{
     const user = session?.user;
     document.getElementById('logoutBtn').style.display = user ? 'inline-flex' : 'none';
     document.getElementById('whoami').textContent = user ? ('• '+(user.email || user.id)) : '';
-    if(user) await syncLoadAll();
+    if(user) await syncLoadFor(getViewDate());
   });
 
   // Автоскрытие шапки при скролле
@@ -539,8 +626,38 @@
     }, { passive: true });
   })();
 
-  function renderAll(){ renderTabs(); renderSchedule(); renderMeals(); renderTotals(); renderDailyGoals(); renderWeeklyGoals(); renderStates(); renderHealth(); renderAlpha(); updateProgress(); }
+  // Показ «Итоги недели» только в воскресенье выбранной даты
+  function toggleWeeklyVisibility(){
+    const sec = document.getElementById('weeklySection');
+    if (!sec) return;
+    const isSunday = (getViewDate().getDay() === 0); // 0 — воскресенье
+    sec.style.display = isSunday ? 'block' : 'none';
+  }
+
+  function renderAll(){
+    renderTabs();
+    renderSchedule();
+    renderMeals();
+    renderTotals();
+    renderDailyGoals();
+    renderWeeklyGoals();
+    renderStates();
+    renderHealth();
+    renderAlpha();
+    updateProgress();
+    toggleWeeklyVisibility();
+  }
   loadTimes(); renderAll();
+
+  // Навигация недель
+  document.getElementById('prevWeekBtn').onclick = ()=>{
+    viewWeekStart = addDays(viewWeekStart, -7);
+    renderAll(); syncLoadFor(getViewDate());
+  };
+  document.getElementById('nextWeekBtn').onclick = ()=>{
+    viewWeekStart = addDays(viewWeekStart, 7);
+    renderAll(); syncLoadFor(getViewDate());
+  };
   </script>
 </body>
 </html>
