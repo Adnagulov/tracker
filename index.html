@@ -126,7 +126,7 @@
       </div>
 
       <div id="authBox" class="flex" style="margin-top:10px">
-        <input id="emailInput" type="email" placeholder="email (для входа по ссылке)" style="max-width:260px">
+        <input id="emailInput" type="email" placeholder="email (получишь 6-значный код)" style="max-width:260px">
         <button class="btn" id="loginBtn">Войти</button>
         <button class="btn" id="logoutBtn" style="display:none">Выйти</button>
         <span id="whoami" class="sub"></span>
@@ -223,6 +223,20 @@
       <div class="flex" style="margin-top:12px;justify-content:flex-end">
         <button class="btn" id="cancelSettings">Отмена</button>
         <button class="btn primary" id="saveSettings">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OTP-модал для кода из письма -->
+  <div id="otpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:16px;z-index:50">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;max-width:360px;width:100%">
+      <h3 style="margin:0 0 8px">Вход по коду</h3>
+      <div class="muted" id="otpHint" style="margin-bottom:8px">Мы отправили 6-значный код на email.</div>
+      <input id="otpCode" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+             placeholder="Введите 6-значный код" style="width:100%;font-size:18px;padding:10px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text)">
+      <div class="flex" style="justify-content:flex-end;margin-top:12px">
+        <button class="btn" id="otpCancel">Отмена</button>
+        <button class="btn primary" id="otpSubmit">Подтвердить</button>
       </div>
     </div>
   </div>
@@ -458,16 +472,26 @@
   async function syncLoadFor(d){
     const user=await sbGetUser(); if(!user) return;
     const s=ymd(d), w=isoWeek(d);
-    const {data:drow}=await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd',s).maybeSingle(); applyData(drow?.data);
-    const {data:wrow}=await sb.from('weekly_data').select('data').eq('user_id',user.id).eq('week_id',w).maybeSingle(); applyData(wrow?.data);
+    const {data:drow, error:e1}=await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd',s).maybeSingle();
+    if(e1) console.warn('daily_data load error', e1);
+    applyData(drow?.data);
+    const {data:wrow, error:e2}=await sb.from('weekly_data').select('data').eq('user_id',user.id).eq('week_id',w).maybeSingle();
+    if(e2) console.warn('weekly_data load error', e2);
+    applyData(wrow?.data);
     renderAll();
   }
   async function syncSaveFor(d){
     const user=await sbGetUser(); if(!user) return;
     const s=ymd(d), w=isoWeek(d);
     const daily=collectDailyFor(d), weekly=collectWeeklyFor(d);
-    if(Object.keys(daily).length)  await sb.from('daily_data').upsert({user_id:user.id, ymd:s, data:daily,  updated_at:new Date().toISOString()},{onConflict:'user_id,ymd'});
-    if(Object.keys(weekly).length) await sb.from('weekly_data').upsert({user_id:user.id, week_id:w, data:weekly, updated_at:new Date().toISOString()},{onConflict:'user_id,week_id'});
+    if(Object.keys(daily).length){
+      const { error } = await sb.from('daily_data').upsert({user_id:user.id, ymd:s, data:daily,  updated_at:new Date().toISOString()},{onConflict:'user_id,ymd'});
+      if(error) { console.warn('daily_data save error', error); alert('Ошибка сохранения дня: '+error.message); }
+    }
+    if(Object.keys(weekly).length){
+      const { error } = await sb.from('weekly_data').upsert({user_id:user.id, week_id:w, data:weekly, updated_at:new Date().toISOString()},{onConflict:'user_id,week_id'});
+      if(error) { console.warn('weekly_data save error', error); alert('Ошибка сохранения недели: '+error.message); }
+    }
   }
   let saveTimer; function scheduleSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>syncSaveFor(getViewDate()),800); }
   try{ sb.channel('changes')
@@ -475,91 +499,87 @@
       .on('postgres_changes',{event:'*',schema:'public',table:'weekly_data'},()=>syncLoadFor(getViewDate()))
       .subscribe(); }catch(e){}
 
-// ======== AUTH: стабильный вход по одноразовому коду (без редиректов) ========
-const loginBtn   = document.getElementById('loginBtn');
-const logoutBtn  = document.getElementById('logoutBtn');
-const whoamiEl   = document.getElementById('whoami');
-const emailInput = document.getElementById('emailInput');
+  /* ====== AUTH: вход по одноразовому коду (без редиректов) ====== */
+  const loginBtn   = document.getElementById('loginBtn');
+  const logoutBtn  = document.getElementById('logoutBtn');
+  const whoamiEl   = document.getElementById('whoami');
+  const emailInput = document.getElementById('emailInput');
 
-const otpModal   = document.getElementById('otpModal');
-const otpHint    = document.getElementById('otpHint');
-const otpCodeInp = document.getElementById('otpCode');
-const otpCancel  = document.getElementById('otpCancel');
-const otpSubmit  = document.getElementById('otpSubmit');
+  const otpModal   = document.getElementById('otpModal');
+  const otpHint    = document.getElementById('otpHint');
+  const otpCodeInp = document.getElementById('otpCode');
+  const otpCancel  = document.getElementById('otpCancel');
+  const otpSubmit  = document.getElementById('otpSubmit');
 
-function openOtp(email){
-  otpHint.textContent = `Мы отправили 6-значный код на ${email}. Проверь почту.`;
-  otpCodeInp.value = '';
-  otpModal.style.display = 'flex';
-  otpCodeInp.focus();
-}
-function closeOtp(){ otpModal.style.display='none'; }
-
-loginBtn.onclick = async ()=>{
-  const email = emailInput.value.trim();
-  if(!email) return alert('Введи email');
-  try {
-    // Запрашиваем OTP-код (без редиректа)
-    const { error } = await sb.auth.signInWithOtp({
-      email,
-      options: {
-        // без редиректов — код придёт на почту
-        shouldCreateUser: true,
-        emailRedirectTo: undefined
-      }
-    });
-    if (error) return alert('Ошибка входа: ' + error.message);
-    openOtp(email);
-  } catch (e) {
-    alert('Сетевая ошибка. Проверь VPN/AdBlock и настройки CORS/Redirect в Supabase.');
+  function openOtp(email){
+    otpHint.textContent = `Мы отправили 6-значный код на ${email}. Проверь почту.`;
+    otpCodeInp.value = '';
+    otpModal.style.display = 'flex';
+    setTimeout(()=>otpCodeInp.focus(), 50);
   }
-};
+  function closeOtp(){ otpModal.style.display='none'; }
 
-otpCancel.onclick = closeOtp;
-otpSubmit.onclick = async ()=>{
-  const email = emailInput.value.trim();
-  const token = otpCodeInp.value.trim();
-  if(token.length !== 6) return alert('Введи 6-значный код');
-  try {
-    const { data, error } = await sb.auth.verifyOtp({ email, token, type: 'email' });
-    if (error) return alert('Неверный код: ' + error.message);
-    closeOtp();
-    const u = data.user || (await sb.auth.getUser()).data?.user;
-    whoamiEl.textContent = u ? ('• ' + (u.email || u.id)) : '';
-    logoutBtn.style.display = u ? 'inline-flex' : 'none';
-    // как только вошли — грузим данные выбранной даты
-    await syncLoadFor(getViewDate());
-    alert('Вход выполнен ✅');
-  } catch (e) {
-    alert('Ошибка подтверждения кода');
-  }
-};
+  loginBtn.onclick = async ()=>{
+    const email = emailInput.value.trim();
+    if(!email) return alert('Введи email');
+    try {
+      const { error } = await sb.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: undefined // важно: без редиректа
+        }
+      });
+      if (error) return alert('Ошибка входа: ' + error.message);
+      openOtp(email);
+    } catch (e) {
+      alert('Сетевая ошибка. Проверь VPN/AdBlock и настройки CORS/Redirect в Supabase.');
+    }
+  };
 
-logoutBtn.onclick = async ()=>{
-  await sb.auth.signOut();
-  whoamiEl.textContent = '';
-  logoutBtn.style.display = 'none';
-  alert('Вы вышли из аккаунта');
-};
+  otpCancel.onclick = closeOtp;
+  otpSubmit.onclick = async ()=>{
+    const email = emailInput.value.trim();
+    const token = otpCodeInp.value.trim();
+    if(token.length !== 6) return alert('Введи 6-значный код');
+    try {
+      const { data, error } = await sb.auth.verifyOtp({ email, token, type: 'email' });
+      if (error) return alert('Неверный код: ' + error.message);
+      closeOtp();
+      const u = data.user || (await sb.auth.getUser()).data?.user;
+      whoamiEl.textContent = u ? ('• ' + (u.email || u.id)) : '';
+      logoutBtn.style.display = u ? 'inline-flex' : 'none';
+      await syncLoadFor(getViewDate());
+      alert('Вход выполнен ✅');
+    } catch (e) {
+      alert('Ошибка подтверждения кода');
+    }
+  };
 
-// При загрузке страницы попробуем восстановить сессию
-(async ()=>{
-  try {
-    const { data:{ session } } = await sb.auth.getSession();
+  logoutBtn.onclick = async ()=>{
+    await sb.auth.signOut();
+    whoamiEl.textContent = '';
+    logoutBtn.style.display = 'none';
+    alert('Вы вышли из аккаунта');
+  };
+
+  // Восстановление сессии при загрузке
+  (async ()=>{
+    try {
+      const { data:{ session } } = await sb.auth.getSession();
+      const user = session?.user;
+      whoamiEl.textContent = user ? ('• ' + (user.email || user.id)) : '';
+      logoutBtn.style.display = user ? 'inline-flex' : 'none';
+      if (user) await syncLoadFor(getViewDate());
+    } catch {}
+  })();
+
+  // Подписка — обновляем UI по смене сессии
+  sb.auth.onAuthStateChange(async (_e, session)=>{
     const user = session?.user;
     whoamiEl.textContent = user ? ('• ' + (user.email || user.id)) : '';
     logoutBtn.style.display = user ? 'inline-flex' : 'none';
-    if (user) await syncLoadFor(getViewDate());
-  } catch {}
-})();
-
-// Оставляем подписку — если у тебя уже была:
-sb.auth.onAuthStateChange(async (_e, session)=>{
-  const user = session?.user;
-  whoamiEl.textContent = user ? ('• ' + (user.email || user.id)) : '';
-  logoutBtn.style.display = user ? 'inline-flex' : 'none';
-});
-
+  });
 
   // «Итоги недели» только в воскресенье выбранной даты
   function toggleWeeklyVisibility(){ const sec=document.getElementById('weeklySection'); sec.style.display=(getViewDate().getDay()===0)?'block':'none'; }
@@ -570,22 +590,6 @@ sb.auth.onAuthStateChange(async (_e, session)=>{
   // Навигация недель
   document.getElementById('prevWeekBtn').onclick=()=>{ viewWeekStart=addDays(viewWeekStart,-7); renderAll(); syncLoadFor(getViewDate()); };
   document.getElementById('nextWeekBtn').onclick=()=>{ viewWeekStart=addDays(viewWeekStart, 7); renderAll(); syncLoadFor(getViewDate()); };
-
-  <!-- OTP-модал для кода из письма -->
-<div id="otpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:16px;z-index:50">
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;max-width:360px;width:100%">
-    <h3 style="margin:0 0 8px">Вход по коду</h3>
-    <div class="muted" id="otpHint" style="margin-bottom:8px">Мы отправили 6-значный код на email.</div>
-    <input id="otpCode" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6"
-           placeholder="Введите 6-значный код" style="width:100%;font-size:18px;padding:10px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text)">
-    <div class="flex" style="justify-content:flex-end;margin-top:12px">
-      <button class="btn" id="otpCancel">Отмена</button>
-      <button class="btn primary" id="otpSubmit">Подтвердить</button>
-    </div>
-  </div>
-</div>
-
-  sb.auth.onAuthStateChange(async (_e, session)=>{ const u=session?.user; document.getElementById('logoutBtn').style.display=u?'inline-flex':'none'; document.getElementById('whoami').textContent=u?('• '+(u.email||u.id)) : ''; if(u) await syncLoadFor(getViewDate()); });
   </script>
 </body>
 </html>
