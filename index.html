@@ -18,7 +18,7 @@
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Inter,Arial,sans-serif}
 
-    /* 🔧 Шапка обычная (НЕ фиксируется нигде) */
+    /* Шапка обычная (НЕ фиксируется) */
     header{
       position:relative; top:auto; background:var(--bg);
       border-bottom:1px solid var(--border); backdrop-filter:none; z-index:auto;
@@ -69,7 +69,7 @@
     .small{font-size:12px}
     .right{margin-left:auto}
 
-    /* Спарклайны (маленькие графики) */
+    /* Спарклайны */
     .spark-wrap{display:grid;grid-template-columns:84px 1fr;gap:8px;align-items:center}
     .spark-title{color:var(--muted);font-size:12px}
     .spark-kpi{font-size:12px;color:var(--muted)}
@@ -126,7 +126,7 @@
       </div>
 
       <div id="authBox" class="flex" style="margin-top:10px">
-        <input id="emailInput" type="email" placeholder="email (получишь 6-значный код)" style="max-width:260px">
+        <input id="emailInput" type="email" placeholder="email (для входа по ссылке)" style="max-width:260px">
         <button class="btn" id="loginBtn">Войти</button>
         <button class="btn" id="logoutBtn" style="display:none">Выйти</button>
         <span id="whoami" class="sub"></span>
@@ -223,20 +223,6 @@
       <div class="flex" style="margin-top:12px;justify-content:flex-end">
         <button class="btn" id="cancelSettings">Отмена</button>
         <button class="btn primary" id="saveSettings">Сохранить</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- OTP-модал для кода из письма -->
-  <div id="otpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:16px;z-index:50">
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;max-width:360px;width:100%">
-      <h3 style="margin:0 0 8px">Вход по коду</h3>
-      <div class="muted" id="otpHint" style="margin-bottom:8px">Мы отправили 6-значный код на email.</div>
-      <input id="otpCode" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6"
-             placeholder="Введите 6-значный код" style="width:100%;font-size:18px;padding:10px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text)">
-      <div class="flex" style="justify-content:flex-end;margin-top:12px">
-        <button class="btn" id="otpCancel">Отмена</button>
-        <button class="btn primary" id="otpSubmit">Подтвердить</button>
       </div>
     </div>
   </div>
@@ -499,25 +485,20 @@
       .on('postgres_changes',{event:'*',schema:'public',table:'weekly_data'},()=>syncLoadFor(getViewDate()))
       .subscribe(); }catch(e){}
 
-  /* ====== AUTH: вход по одноразовому коду (без редиректов) ====== */
+  /* ====== AUTH: Magic Link ====== */
   const loginBtn   = document.getElementById('loginBtn');
   const logoutBtn  = document.getElementById('logoutBtn');
   const whoamiEl   = document.getElementById('whoami');
   const emailInput = document.getElementById('emailInput');
 
-  const otpModal   = document.getElementById('otpModal');
-  const otpHint    = document.getElementById('otpHint');
-  const otpCodeInp = document.getElementById('otpCode');
-  const otpCancel  = document.getElementById('otpCancel');
-  const otpSubmit  = document.getElementById('otpSubmit');
-
-  function openOtp(email){
-    otpHint.textContent = `Мы отправили 6-значный код на ${email}. Проверь почту.`;
-    otpCodeInp.value = '';
-    otpModal.style.display = 'flex';
-    setTimeout(()=>otpCodeInp.focus(), 50);
-  }
-  function closeOtp(){ otpModal.style.display='none'; }
+  // корректный Redirect URL для GitHub Pages (/tracker/)
+  const REDIRECT_URL = (() => {
+    const u = new URL(window.location.href);
+    let p = u.pathname;
+    if (p.endsWith('.html')) p = p.slice(0, p.lastIndexOf('/')+1);
+    if (!p.endsWith('/')) p += '/';
+    return `${u.origin}${p}`;
+  })();
 
   loginBtn.onclick = async ()=>{
     const email = emailInput.value.trim();
@@ -527,31 +508,13 @@
         email,
         options: {
           shouldCreateUser: true,
+          emailRedirectTo: REDIRECT_URL
         }
       });
       if (error) return alert('Ошибка входа: ' + error.message);
-      openOtp(email);
+      alert('Письмо со ссылкой отправлено. Открой ссылку с этого устройства.');
     } catch (e) {
-      alert('Сетевая ошибка. Проверь VPN/AdBlock и настройки CORS/Redirect в Supabase.');
-    }
-  };
-
-  otpCancel.onclick = closeOtp;
-  otpSubmit.onclick = async ()=>{
-    const email = emailInput.value.trim();
-    const token = otpCodeInp.value.trim();
-    if(token.length !== 6) return alert('Введи 6-значный код');
-    try {
-      const { data, error } = await sb.auth.verifyOtp({ email, token, type: 'email' });
-      if (error) return alert('Неверный код: ' + error.message);
-      closeOtp();
-      const u = data.user || (await sb.auth.getUser()).data?.user;
-      whoamiEl.textContent = u ? ('• ' + (u.email || u.id)) : '';
-      logoutBtn.style.display = u ? 'inline-flex' : 'none';
-      await syncLoadFor(getViewDate());
-      alert('Вход выполнен ✅');
-    } catch (e) {
-      alert('Ошибка подтверждения кода');
+      alert('Сетевая ошибка. Проверь URL в Supabase (Site/Redirect URLs) и блокировщики.');
     }
   };
 
@@ -562,9 +525,15 @@
     alert('Вы вышли из аккаунта');
   };
 
-  // Восстановление сессии при загрузке
+  // Обработка редиректа после клика по magic link
   (async ()=>{
     try {
+      // Для некоторых потоков (PKCE) требуется обмен кода на сессию — пробуем молча
+      try { await sb.auth.exchangeCodeForSession(window.location.href); } catch(_) {}
+      // Чистим URL от хвостов ?code= / #access_token=, чтобы не мешали навигации
+      if (/[?#].*(access_token|refresh_token|code)=/i.test(location.href)) {
+        history.replaceState({}, document.title, REDIRECT_URL);
+      }
       const { data:{ session } } = await sb.auth.getSession();
       const user = session?.user;
       whoamiEl.textContent = user ? ('• ' + (user.email || user.id)) : '';
