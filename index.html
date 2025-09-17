@@ -346,15 +346,54 @@
       c2.appendChild(wrap); row.appendChild(c2); row.appendChild(document.createElement('div')); mealsGrid.appendChild(row);
     });
   }
-  function renderTotals(){
-    const vd=getViewDate(); totalsGrid.innerHTML=''; const sums={'Калории (ккал)':0,'Белки (г)':0,'Жиры (г)':0,'Углеводы (г)':0};
-    MEALS.forEach(m=>N_FIELDS.forEach(f=> sums[f]+=getNum(NF_KEY(vd,m,f))));
-    N_FIELDS.forEach(field=>{
-      const row=document.createElement('div'); row.className='row'; const c1=document.createElement('div'); c1.className='time'; c1.textContent=field; row.appendChild(c1);
-      const c2=document.createElement('div'); c2.className='label'; c2.textContent=String(sums[field]); if(field==='Калории (ккал)'){ c2.style.color=(sums[field]>2000)?'#ef4444':(sums[field]<1500?'#2563eb':'inherit'); } row.appendChild(c2);
-      row.appendChild(document.createElement('div')); totalsGrid.appendChild(row);
-    });
-  }
+ // Плановые значения
+const PLANS = {
+  'Калории (ккал)': 1950,
+  'Белки (г)': 210,
+  'Жиры (г)': 55,
+  'Углеводы (г)': 150
+};
+
+function renderTotals(){
+  const vd = getViewDate();
+  totalsGrid.innerHTML = '';
+
+  // Суммируем факт за день
+  const sums = {'Калории (ккал)':0,'Белки (г)':0,'Жиры (г)':0,'Углеводы (г)':0};
+  MEALS.forEach(meal => N_FIELDS.forEach(field => {
+    sums[field] += getNum(NF_KEY(vd, meal, field));
+  }));
+
+  // Рендер строк (Факт / План и % от плана)
+  N_FIELDS.forEach(field=>{
+    const row = document.createElement('div');
+    row.className = 'row';
+
+    const c1 = document.createElement('div');
+    c1.className = 'time';
+    c1.textContent = field;
+    row.appendChild(c1);
+
+    const fact = sums[field];
+    const plan = PLANS[field] ?? 0;
+    const pct  = plan ? Math.round((fact/plan)*100) : 0;
+
+    const c2 = document.createElement('div');
+    c2.className = 'label';
+    c2.textContent = `${fact} / ${plan} (${pct}%)`;
+
+    // Подсветка по отклонению от плана: >110% — красный, <90% — синий
+    if (plan) {
+      if (fact > plan*1.10)      c2.style.color = '#ef4444'; // перебор
+      else if (fact < plan*0.90) c2.style.color = '#2563eb'; // недобор
+      else                       c2.style.color = 'inherit'; // в коридоре
+    }
+
+    row.appendChild(c2);
+    row.appendChild(document.createElement('div'));
+    totalsGrid.appendChild(row);
+  });
+}
 
   /* ====== Состояние ====== */
   const stateGrid=document.getElementById('stateGrid');
