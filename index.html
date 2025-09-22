@@ -148,7 +148,7 @@
       <div class="card"><div class="muted small">Книга / месяц</div><div class="big" id="bookPages">20 стр/день</div><div class="small muted">Читай 20–30 мин ежедневно</div></div>
       <div class="card"><div class="muted small">Английский</div><div class="big" id="engDaily">Duolingo 15–30 мин</div><div class="small muted">Подкаст в дороге</div></div>
 
-      <!-- мини-графики здоровья за неделю -->
+      <!-- мини-график здоровья за неделю: оставляем только Вес -->
       <div class="card" id="healthWeeklyCard">
         <div class="muted small">Здоровье (неделя)</div>
         <div class="spark-wrap" style="margin-top:6px">
@@ -157,13 +157,6 @@
             <div class="spark-kpi" id="weightLast">—</div>
           </div>
           <div class="spark" id="weightSpark"></div>
-        </div>
-        <div class="spark-wrap" style="margin-top:10px">
-          <div>
-            <div class="spark-title">Пульс утром</div>
-            <div class="spark-kpi" id="pulseLast">—</div>
-          </div>
-          <div class="spark" id="pulseSpark"></div>
         </div>
       </div>
     </section>
@@ -191,12 +184,6 @@
       <h3 style="margin-top:0">Итоги недели</h3>
       <div class="grid" id="weeklyGoals"></div>
       <div class="small muted" style="margin-top:8px">Неделя считается по ISO (пн–вс). «Сброс дня» чистит весь текущий день (расписание, цели и питание).</div>
-    </section>
-
-    <section class="card">
-      <h3 style="margin-top:0">Состояние за день</h3>
-      <div id="stateGrid"></div>
-      <div class="small muted">Выбери по шкале от 1 до 5: 1 — плохо, 5 — отлично.</div>
     </section>
 
     <section class="card">
@@ -285,9 +272,12 @@
   const WEEK_KEY =(w,i)=>`wgoal:${w}:${i}`;
   const NF_KEY   =(d,m,f)=>`n:${ymd(d)}:${m}:${f}`;
   const STATE_KEY=(d,t)=>`state:${ymd(d)}:${t}`;
-  const PULSE_KEY=(d)=>`metric:${ymd(d)}:pulse`;
   const WEIGHT_KEY=(d)=>`metric:${ymd(d)}:weight`;
-  const ERECT_KEY =(d)=>`metric:${ymd(d)}:erection`;
+
+  // Новые: окружности (по воскресеньям)
+  const WAIST_KEY =(d)=>`metric:${ymd(d)}:waist`;
+  const BICEP_KEY =(d)=>`metric:${ymd(d)}:biceps`;
+  const QUAD_KEY  =(d)=>`metric:${ymd(d)}:quad`;
 
   /* ====== Рендер ====== */
   const tabs=document.getElementById('dayTabs');
@@ -405,44 +395,50 @@
   }
   function renderStates(){ stateGrid.innerHTML=''; stateGrid.appendChild(stateRow('Эмоционально','mood')); stateGrid.appendChild(stateRow('Физически','body')); }
 
-  /* ====== Здоровье (утро): Пульс / Вес / Эрекция ====== */
+  /* ====== Здоровье (утро): Вес всегда; Обмеры — только воскресенье ====== */
   const healthGrid=document.getElementById('healthGrid');
+  function isSunday(d){ return d.getDay()===0; }
+
   function renderHealth(){
     const vd=getViewDate(); healthGrid.innerHTML='';
-    // Пульс (отдельный ключ)
-    let r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Пульс утром</div>`; 
-    let c=document.createElement('div'); c.className='label';
-    let i=document.createElement('input'); i.type='number'; i.min='30'; i.max='150'; i.placeholder='уд/мин'; 
-    i.value = localStorage.getItem(PULSE_KEY(vd)) ?? ''; 
-    i.onchange=()=>{ localStorage.setItem(PULSE_KEY(vd), String(i.value||'')); scheduleSave();}; 
-    c.appendChild(i); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
 
-    // Вес (отдельный ключ)
-    r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Вес (кг)</div>`; 
-    c=document.createElement('div'); c.className='label';
-    i=document.createElement('input'); i.type='number'; i.min='40'; i.max='200'; i.step='0.1'; i.placeholder='кг'; 
+    // Вес (всегда)
+    let r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Вес (кг)</div>`; 
+    let c=document.createElement('div'); c.className='label';
+    let i=document.createElement('input'); i.type='number'; i.min='40'; i.max='200'; i.step='0.1'; i.placeholder='кг'; 
     i.value = localStorage.getItem(WEIGHT_KEY(vd)) ?? ''; 
     i.onchange=()=>{ localStorage.setItem(WEIGHT_KEY(vd), String(i.value||'')); scheduleSave();}; 
     c.appendChild(i); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
 
-    // Эрекция (ничего не выбрано по умолчанию)
-    r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Эрекция</div>`; 
-    c=document.createElement('div'); c.className='label'; 
-    const wrap=document.createElement('div'); wrap.className='chips'; 
-    const savedRaw = localStorage.getItem(ERECT_KEY(vd)); // null => ничего не активно
-    const saved = savedRaw===null ? null : Number(savedRaw);
-    [['Да',1],['Нет',0]].forEach(([txt,val])=>{
-      const b=document.createElement('button'); 
-      b.type='button'; 
-      b.className='chip'+(saved===val?' active':''); 
-      b.textContent=txt; 
-      b.onclick=()=>{ localStorage.setItem(ERECT_KEY(vd), String(val)); renderHealth(); scheduleSave();};
-      wrap.appendChild(b);
-    });
-    c.appendChild(wrap); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
+    // Обмеры только в воскресенье
+    if(isSunday(vd)){
+      // Объем живота
+      r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Объем живота</div>`;
+      c=document.createElement('div'); c.className='label';
+      i=document.createElement('input'); i.type='number'; i.min='30'; i.max='200'; i.step='0.5'; i.placeholder='см';
+      i.value = localStorage.getItem(WAIST_KEY(vd)) ?? '';
+      i.onchange=()=>{ localStorage.setItem(WAIST_KEY(vd), String(i.value||'')); scheduleSave(); };
+      c.appendChild(i); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
+
+      // Объем бицепса
+      r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Объем бицепса</div>`;
+      c=document.createElement('div'); c.className='label';
+      i=document.createElement('input'); i.type='number'; i.min='15'; i.max='70'; i.step='0.5'; i.placeholder='см';
+      i.value = localStorage.getItem(BICEP_KEY(vd)) ?? '';
+      i.onchange=()=>{ localStorage.setItem(BICEP_KEY(vd), String(i.value||'')); scheduleSave(); };
+      c.appendChild(i); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
+
+      // Объем квадрицепса
+      r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Объем квадрицепса</div>`;
+      c=document.createElement('div'); c.className='label';
+      i=document.createElement('input'); i.type='number'; i.min='30'; i.max='90'; i.step='0.5'; i.placeholder='см';
+      i.value = localStorage.getItem(QUAD_KEY(vd)) ?? '';
+      i.onchange=()=>{ localStorage.setItem(QUAD_KEY(vd), String(i.value||'')); scheduleSave(); };
+      c.appendChild(i); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
+    }
   }
 
-  /* ====== Мини-графики недели ====== */
+  /* ====== Мини-графики недели: только Вес ====== */
   function getWeekDates(){ const s=viewWeekStart; return Array.from({length:7},(_,i)=>addDays(s,i)); }
   function collectMetricSeries(keyFn){ return getWeekDates().map(d=>{ const v=localStorage.getItem(keyFn(d)); return v==null||v===''?null:Number(v); }); }
   function renderSpark(containerId, series, opts){
@@ -461,10 +457,7 @@
   function renderHealthWeeklyCard(){
     const wSeries=collectMetricSeries(d=>`metric:${ymd(d)}:weight`);
     const lastW=[...wSeries].reverse().find(v=>v!=null); document.getElementById('weightLast').textContent=lastW!=null?`${lastW} кг`:'—';
-    const pSeries=collectMetricSeries(d=>`metric:${ymd(d)}:pulse`);
-    const lastP=[...pSeries].reverse().find(v=>v!=null); document.getElementById('pulseLast').textContent=lastP!=null?`${lastP} уд/мин`:'—';
     renderSpark('weightSpark', wSeries, {});
-    renderSpark('pulseSpark', pSeries, {min:40,max:120});
   }
 
   /* ====== Экспорт/импорт ====== */
@@ -505,7 +498,10 @@
     for(let i=0;i<goalsDaily.length;i++) localStorage.removeItem(GOAL_KEY(vd,i));
     ['Завтрак','Обед','Ужин','Перекусы'].forEach(m=>['Калории (ккал)','Белки (г)','Жиры (г)','Углеводы (г)'].forEach(f=>localStorage.removeItem(NF_KEY(vd,m,f))));
     ['mood','body'].forEach(t=> localStorage.removeItem(STATE_KEY(vd,t)));
-    [PULSE_KEY,WEIGHT_KEY,ERECT_KEY].forEach(fn=> localStorage.removeItem(fn(vd)));
+    // Вес всегда; обмеры - если вдруг есть на текущий день
+    [WEIGHT_KEY, WAIST_KEY, BICEP_KEY, QUAD_KEY].forEach(fn=>{
+      try { localStorage.removeItem(fn(vd)); } catch(_){}
+    });
     renderAll(); scheduleSave();
   };
   document.getElementById('saveNearBtn').onclick=()=> syncSaveFor(getViewDate());
