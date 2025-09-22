@@ -64,12 +64,11 @@
     .kpi .card{padding:14px}
     .big{font-size:22px;font-weight:800}
     progress{width:100%;height:14px}
-    footer.sticky{position:sticky;bottom:0;background:linear-gradient(0deg,rgba(15,23,42,.97),rgba(15,23,42,.9));backdrop-filter:blur(8px);border-top:1px solid var(--border)}
-    [data-theme="light"] footer.sticky{background:linear-gradient(0deg,rgba(255,255,255,.97),rgba(255,255,255,.9))}
+    footer.sticky{position:relative;border-top:1px solid transparent} /* пустая заглушка */
     .small{font-size:12px}
     .right{margin-left:auto}
 
-    /* Спарклайны */
+    /* Спарклайны (маленькие графики) */
     .spark-wrap{display:grid;grid-template-columns:84px 1fr;gap:8px;align-items:center}
     .spark-title{color:var(--muted);font-size:12px}
     .spark-kpi{font-size:12px;color:var(--muted)}
@@ -178,7 +177,9 @@
       <h3 style="margin-top:0">🍴 Питание за день</h3>
       <div class="grid" id="nutritionMeals"></div>
       <div class="grid" id="nutritionTotals"></div>
-      <div class="small muted" style="margin-top:8px">Цвет итога по калориям: >2000 — <b style="color:#ef4444">красный</b>, <1500 — <b style="color:#2563eb">синий</b>.</div>
+      <div class="small muted" style="margin-top:8px" id="nutritionHint">
+        Подсветка: &gt;110% от плана — <b style="color:#ef4444">красный</b>, &lt;90% — <b style="color:#2563eb">синий</b>.
+      </div>
     </section>
 
     <section class="card">
@@ -199,17 +200,13 @@
     </section>
 
     <section class="card">
-      <h3 style="margin-top:0">Здоровье и дисциплина (утро)</h3>
+      <h3 style="margin-top:0">Здоровье (утро)</h3>
       <div class="grid" id="healthGrid"></div>
-      <div class="grid" id="alphaGrid"></div>
     </section>
   </main>
 
   <footer class="sticky">
-    <div class="wrap flex" style="justify-content:space-between">
-      <div class="small muted">Добавь на домашний экран для быстрого доступа 📲</div>
-      <button class="btn primary" id="addToHome" style="display:none">Добавить на главный экран</button>
-    </div>
+    <div class="wrap flex"></div>
   </footer>
 
   <!-- Настройки -->
@@ -268,7 +265,18 @@
     ['22:00–22:30','Вечерний ритуал, душ'],
     ['22:30–06:00','Сон']
   ];
-  const sportPlan = {0:'Силовые (гиря/гантели)',1:'Бег (интервалы 5–7 км)',2:'Футбол',3:'Силовые (гиря/гантели)',4:'Бег (5–7 км)',5:'Силовые + бег (комбо)',6:'Футбол'};
+
+  /* Обновлённый план спорта по дням */
+  const sportPlan = {
+    0:'Силовая дома',
+    1:'Бег улица',
+    2:'Силовая улица',
+    3:'Бег улица',
+    4:'Силовая дома',
+    5:'Силовая улица',
+    6:'Футбол'
+  };
+
   const goalsDaily  = ['7+ часов сна','Duolingo 15–30 мин','Аудио в дороге (утро/вечер)','20+ страниц книги','Питание по плану','Спорт дня выполнен'];
   const goalsWeekly = ['5+ тренировок/активностей','2× силовые','2× футбол','2× бег (интервалы/длинный)','7× Duolingo','7× 20+ страниц книги','План недели составлен'];
 
@@ -280,7 +288,6 @@
   const PULSE_KEY=(d)=>`metric:${ymd(d)}:pulse`;
   const WEIGHT_KEY=(d)=>`metric:${ymd(d)}:weight`;
   const ERECT_KEY =(d)=>`metric:${ymd(d)}:erection`;
-  const ALPHA_KEY =(d,i)=>`alpha:${ymd(d)}:${i}`;
 
   /* ====== Рендер ====== */
   const tabs=document.getElementById('dayTabs');
@@ -333,6 +340,15 @@
   const mealsGrid=document.getElementById('nutritionMeals'), totalsGrid=document.getElementById('nutritionTotals');
   const MEALS=['Завтрак','Обед','Ужин','Перекусы']; const N_FIELDS=['Калории (ккал)','Белки (г)','Жиры (г)','Углеводы (г)'];
   const getNum=(k)=>parseInt(localStorage.getItem(k)||0); const setNum=(k,v)=>localStorage.setItem(k,String(v));
+
+  // Плановые значения
+  const PLANS = {
+    'Калории (ккал)': 1950,
+    'Белки (г)': 210,
+    'Жиры (г)': 55,
+    'Углеводы (г)': 150
+  };
+
   function renderMeals(){
     const vd=getViewDate(); mealsGrid.innerHTML='';
     const header=document.createElement('div'); header.className='row'; header.innerHTML='<div class="time">Приём</div><div class="label">КБЖУ</div><div></div>'; mealsGrid.appendChild(header);
@@ -346,55 +362,27 @@
       c2.appendChild(wrap); row.appendChild(c2); row.appendChild(document.createElement('div')); mealsGrid.appendChild(row);
     });
   }
-// Плановые значения
-const PLANS = {
-  'Калории (ккал)': 1950,
-  'Белки (г)': 210,
-  'Жиры (г)': 55,
-  'Углеводы (г)': 150
-};
+  function renderTotals(){
+    const vd = getViewDate();
+    totalsGrid.innerHTML = '';
+    const sums={'Калории (ккал)':0,'Белки (г)':0,'Жиры (г)':0,'Углеводы (г)':0};
+    MEALS.forEach(m=>N_FIELDS.forEach(f=> { sums[f]+=getNum(NF_KEY(vd,m,f)); }));
 
-function renderTotals(){
-  const vd = getViewDate();
-  totalsGrid.innerHTML = '';
+    N_FIELDS.forEach(field=>{
+      const row=document.createElement('div'); row.className='row';
+      const c1=document.createElement('div'); c1.className='time'; c1.textContent=field; row.appendChild(c1);
 
-  // Суммируем факт за день
-  const sums = {'Калории (ккал)':0,'Белки (г)':0,'Жиры (г)':0,'Углеводы (г)':0};
-  MEALS.forEach(meal => N_FIELDS.forEach(field => {
-    sums[field] += getNum(NF_KEY(vd, meal, field));
-  }));
-
-  // Рендер строк (Факт / План и % от плана)
-  N_FIELDS.forEach(field=>{
-    const row = document.createElement('div');
-    row.className = 'row';
-
-    const c1 = document.createElement('div');
-    c1.className = 'time';
-    c1.textContent = field;
-    row.appendChild(c1);
-
-    const fact = sums[field];
-    const plan = PLANS[field] ?? 0;
-    const pct  = plan ? Math.round((fact/plan)*100) : 0;
-
-    const c2 = document.createElement('div');
-    c2.className = 'label';
-    c2.textContent = `${fact} / ${plan} (${pct}%)`;
-
-    // Подсветка по отклонению от плана: >110% — красный, <90% — синий
-    if (plan) {
-      if (fact > plan*1.10)      c2.style.color = '#ef4444'; // перебор
-      else if (fact < plan*0.90) c2.style.color = '#2563eb'; // недобор
-      else                       c2.style.color = 'inherit'; // в коридоре
-    }
-
-    row.appendChild(c2);
-    row.appendChild(document.createElement('div'));
-    totalsGrid.appendChild(row);
-  });
-}
-
+      const fact=sums[field]; const plan=PLANS[field]??0; const pct=plan?Math.round((fact/plan)*100):0;
+      const c2=document.createElement('div'); c2.className='label'; c2.textContent=`${fact} / ${plan} (${pct}%)`;
+      if(plan){
+        if(fact>plan*1.10) c2.style.color='#ef4444';
+        else if(fact<plan*0.90) c2.style.color='#2563eb';
+        else c2.style.color='inherit';
+      }
+      row.appendChild(c2);
+      row.appendChild(document.createElement('div')); totalsGrid.appendChild(row);
+    });
+  }
 
   /* ====== Состояние ====== */
   const stateGrid=document.getElementById('stateGrid');
@@ -402,32 +390,56 @@ function renderTotals(){
   function stateRow(title,type){
     const vd=getViewDate(); const box=document.createElement('div'); box.className='stateRow';
     const h=document.createElement('div'); h.className='stateTitle'; h.textContent=title; box.appendChild(h);
-    const wrap=document.createElement('div'); wrap.className='chips'; const saved=parseInt(localStorage.getItem(STATE_KEY(vd,type))||0);
-    stateOptions.forEach(o=>{ const b=document.createElement('button'); b.type='button'; b.className='chip'+(saved===o.v?' active':''); b.textContent=o.label; b.onclick=()=>{ localStorage.setItem(STATE_KEY(vd,type),String(o.v)); renderStates(); scheduleSave(); }; wrap.appendChild(b);});
+    const wrap=document.createElement('div'); wrap.className='chips'; 
+    const savedRaw = localStorage.getItem(STATE_KEY(vd,type));
+    const saved = savedRaw===null ? null : Number(savedRaw);
+    stateOptions.forEach(o=>{ 
+      const b=document.createElement('button'); 
+      b.type='button'; 
+      b.className='chip'+(saved===o.v?' active':''); 
+      b.textContent=o.label; 
+      b.onclick=()=>{ localStorage.setItem(STATE_KEY(vd,type),String(o.v)); renderStates(); scheduleSave(); }; 
+      wrap.appendChild(b);
+    });
     box.appendChild(wrap); return box;
   }
   function renderStates(){ stateGrid.innerHTML=''; stateGrid.appendChild(stateRow('Эмоционально','mood')); stateGrid.appendChild(stateRow('Физически','body')); }
 
-  /* ====== Здоровье/Альфа ====== */
-  const healthGrid=document.getElementById('healthGrid'); const alphaGrid=document.getElementById('alphaGrid');
-  const alphaItems=['Быт (порядок)','Спорт (для стаи)','Ответственность (без оправданий)','Деньги (3 способа заработать)'];
+  /* ====== Здоровье (утро): Пульс / Вес / Эрекция ====== */
+  const healthGrid=document.getElementById('healthGrid');
   function renderHealth(){
     const vd=getViewDate(); healthGrid.innerHTML='';
-    // Пульс
-    let r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Пульс утром</div>`; let c=document.createElement('div'); c.className='label';
-    let i=document.createElement('input'); i.type='number'; i.min='30'; i.max='150'; i.placeholder='уд/мин'; i.value=localStorage.getItem(PULSE_KEY(vd))||''; i.onchange=()=>{localStorage.setItem(PULSE_KEY(vd),String(i.value||'')); scheduleSave();}; c.appendChild(i); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
-    // Вес
-    r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Вес (кг)</div>`; c=document.createElement('div'); c.className='label';
-    i=document.createElement('input'); i.type='number'; i.min='40'; i.max='200'; i.step='0.1'; i.placeholder='кг'; i.value=localStorage.getItem(WEIGHT_KEY(vd))||''; i.onchange=()=>{localStorage.setItem(WEIGHT_KEY(vd),String(i.value||'')); scheduleSave();}; c.appendChild(i); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
-    // Эрекция
-    r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Эрекция</div>`; c=document.createElement('div'); c.className='label'; const wrap=document.createElement('div'); wrap.className='chips'; const saved=parseInt(localStorage.getItem(ERECT_KEY(vd))||0);
-    [['Да',1],['Нет',0]].forEach(([txt,val])=>{ const b=document.createElement('button'); b.type='button'; b.className='chip'+(saved===val?' active':''); b.textContent=txt; b.onclick=()=>{localStorage.setItem(ERECT_KEY(vd),String(val)); renderHealth(); scheduleSave();}; wrap.appendChild(b);}); c.appendChild(wrap); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
-  }
-  function renderAlpha(){
-    const vd=getViewDate(); alphaGrid.innerHTML='';
-    alphaItems.forEach((lab,idx)=>{ const key=ALPHA_KEY(vd,idx); const saved=localStorage.getItem(key)==='1';
-      alphaGrid.appendChild(makeRow(idx===0?'Альфа 30 дней':'', lab, saved, (v)=>{ localStorage.setItem(key,v?'1':'0'); scheduleSave(); }, key));
+    // Пульс (отдельный ключ)
+    let r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Пульс утром</div>`; 
+    let c=document.createElement('div'); c.className='label';
+    let i=document.createElement('input'); i.type='number'; i.min='30'; i.max='150'; i.placeholder='уд/мин'; 
+    i.value = localStorage.getItem(PULSE_KEY(vd)) ?? ''; 
+    i.onchange=()=>{ localStorage.setItem(PULSE_KEY(vd), String(i.value||'')); scheduleSave();}; 
+    c.appendChild(i); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
+
+    // Вес (отдельный ключ)
+    r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Вес (кг)</div>`; 
+    c=document.createElement('div'); c.className='label';
+    i=document.createElement('input'); i.type='number'; i.min='40'; i.max='200'; i.step='0.1'; i.placeholder='кг'; 
+    i.value = localStorage.getItem(WEIGHT_KEY(vd)) ?? ''; 
+    i.onchange=()=>{ localStorage.setItem(WEIGHT_KEY(vd), String(i.value||'')); scheduleSave();}; 
+    c.appendChild(i); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
+
+    // Эрекция (ничего не выбрано по умолчанию)
+    r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Эрекция</div>`; 
+    c=document.createElement('div'); c.className='label'; 
+    const wrap=document.createElement('div'); wrap.className='chips'; 
+    const savedRaw = localStorage.getItem(ERECT_KEY(vd)); // null => ничего не активно
+    const saved = savedRaw===null ? null : Number(savedRaw);
+    [['Да',1],['Нет',0]].forEach(([txt,val])=>{
+      const b=document.createElement('button'); 
+      b.type='button'; 
+      b.className='chip'+(saved===val?' active':''); 
+      b.textContent=txt; 
+      b.onclick=()=>{ localStorage.setItem(ERECT_KEY(vd), String(val)); renderHealth(); scheduleSave();};
+      wrap.appendChild(b);
     });
+    c.appendChild(wrap); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
   }
 
   /* ====== Мини-графики недели ====== */
@@ -440,7 +452,7 @@ function renderTotals(){
     const axis=document.createElementNS(svgNS,'line'); axis.setAttribute('x1',0);axis.setAttribute('y1',h-1);axis.setAttribute('x2',w);axis.setAttribute('y2',h-1);axis.setAttribute('class','axis'); svg.appendChild(axis);
     const xs=series.map((_,i)=> i/(series.length-1||1));
     const vals=series.filter(v=>v!=null); if(!vals.length){ el.appendChild(svg); return; }
-    let min=opts.min??Math.min(...vals), max=opts.max??Math.max(...vals); if(min===max){min-=1;max+=1;}
+    let min=opts?.min ?? Math.min(...vals), max=opts?.max ?? Math.max(...vals); if(min===max){min-=1;max+=1;}
     const path=document.createElementNS(svgNS,'path'); let d='';
     series.forEach((v,i)=>{ const x=pad+xs[i]*(w-2*pad); const y=v==null?(h-pad):(h-pad)-((v-min)/(max-min))*(h-2*pad); d+=(i===0?'M':'L')+`${x},${y} `; }); path.setAttribute('d',d.trim()); svg.appendChild(path);
     const last=[...series.keys()].reverse().find(i=>series[i]!=null); if(last!=null){ const xv=pad+xs[last]*(w-2*pad); const yv=(h-pad)-((series[last]-min)/(max-min))*(h-2*pad); const dot=document.createElementNS(svgNS,'circle'); dot.setAttribute('cx',xv);dot.setAttribute('cy',yv);dot.setAttribute('r',2.5);dot.setAttribute('class','dot'); svg.appendChild(dot); }
@@ -457,15 +469,34 @@ function renderTotals(){
 
   /* ====== Экспорт/импорт ====== */
   document.getElementById('exportBtn').onclick=()=>{
-    const data={}; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k) continue;
-      if(k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k.startsWith('state:')||k.startsWith('metric:')||k.startsWith('alpha:')||k==='theme'||k==='wakeTime'||k==='sleepTime'){ data[k]=localStorage.getItem(k); }
+    const data={}; 
+    for(let i=0;i<localStorage.length;i++){ 
+      const k=localStorage.key(i); if(!k) continue;
+      if(k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k.startsWith('state:')||k.startsWith('metric:')||k==='theme'||k==='wakeTime'||k==='sleepTime'){ 
+        data[k]=localStorage.getItem(k); 
+      }
     }
-    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='tracker-backup.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); 
+    const url=URL.createObjectURL(blob); 
+    const a=document.createElement('a'); a.href=url; a.download='tracker-backup.json'; a.click(); 
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
   };
-  document.getElementById('importInput').onchange=async(e)=>{ const f=e.target.files[0]; if(!f) return; const t=await f.text();
-    try{ const data=JSON.parse(t); Object.entries(data).forEach(([k,v])=>{ if(k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k.startsWith('state:')||k.startsWith('metric:')||k.startsWith('alpha:')||k==='theme'||k==='wakeTime'||k==='sleepTime') localStorage.setItem(k,String(v));});
-      applyTheme(localStorage.getItem('theme')||'dark'); loadTimes(); renderAll(); alert('Импорт завершён ✅'); scheduleSave();
-    }catch{ alert('Ошибка импорта'); } };
+  document.getElementById('importInput').onchange=async(e)=>{ 
+    const f=e.target.files[0]; if(!f) return; 
+    const t=await f.text();
+    try{ 
+      const data=JSON.parse(t); 
+      Object.entries(data).forEach(([k,v])=>{ 
+        if(k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k.startsWith('state:')||k.startsWith('metric:')||k==='theme'||k==='wakeTime'||k==='sleepTime') 
+          localStorage.setItem(k,String(v));
+      });
+      applyTheme(localStorage.getItem('theme')||'dark'); 
+      loadTimes(); 
+      renderAll(); 
+      alert('Импорт завершён ✅'); 
+      scheduleSave();
+    }catch{ alert('Ошибка импорта'); } 
+  };
 
   /* ====== Сброс/Сохранить ====== */
   document.getElementById('resetDayBtn').onclick=()=>{
@@ -475,21 +506,16 @@ function renderTotals(){
     ['Завтрак','Обед','Ужин','Перекусы'].forEach(m=>['Калории (ккал)','Белки (г)','Жиры (г)','Углеводы (г)'].forEach(f=>localStorage.removeItem(NF_KEY(vd,m,f))));
     ['mood','body'].forEach(t=> localStorage.removeItem(STATE_KEY(vd,t)));
     [PULSE_KEY,WEIGHT_KEY,ERECT_KEY].forEach(fn=> localStorage.removeItem(fn(vd)));
-    for(let i=0;i<4;i++) localStorage.removeItem(ALPHA_KEY(vd,i));
     renderAll(); scheduleSave();
   };
   document.getElementById('saveNearBtn').onclick=()=> syncSaveFor(getViewDate());
-
-  /* ====== PWA ====== */
-  (function(){ const sw=`self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open('tracker-v1').then(c=>c.addAll(['./'])))});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))})`; const blob=new Blob([sw],{type:'text/javascript'}); const url=URL.createObjectURL(blob); if('serviceWorker' in navigator){ navigator.serviceWorker.register(url); }
-    let dp; const btn=document.getElementById('addToHome'); window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); dp=e; btn.style.display='inline-flex'; }); btn.onclick=async()=>{ if(!dp) return; dp.prompt(); await dp.userChoice; btn.style.display='none'; dp=null; }; })();
 
   /* ====== Supabase sync (по выбранной дате) ====== */
   async function sbGetUser(){ const {data:{user}}=await sb.auth.getUser(); return user; }
   function collectDailyFor(d){
     const s=ymd(d), out={};
     for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k) continue;
-      if(k.startsWith('day:'+s)||k.startsWith('goal:'+s)||k.startsWith('n:'+s)||k.startsWith('state:'+s)||k.startsWith('metric:'+s)||k.startsWith('alpha:'+s)) out[k]=localStorage.getItem(k);
+      if(k.startsWith('day:'+s)||k.startsWith('goal:'+s)||k.startsWith('n:'+s)||k.startsWith('state:'+s)||k.startsWith('metric:'+s)) out[k]=localStorage.getItem(k);
     } return out;
   }
   function collectWeeklyFor(d){ const w=isoWeek(d), out={}; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k?.startsWith('wgoal:'+w+':')) out[k]=localStorage.getItem(k);} return out; }
@@ -568,9 +594,7 @@ function renderTotals(){
   // Обработка редиректа после клика по magic link
   (async ()=>{
     try {
-      // Для некоторых потоков (PKCE) требуется обмен кода на сессию — пробуем молча
       try { await sb.auth.exchangeCodeForSession(window.location.href); } catch(_) {}
-      // Чистим URL от хвостов ?code= / #access_token=, чтобы не мешали навигации
       if (/[?#].*(access_token|refresh_token|code)=/i.test(location.href)) {
         history.replaceState({}, document.title, REDIRECT_URL);
       }
@@ -592,7 +616,7 @@ function renderTotals(){
   // «Итоги недели» только в воскресенье выбранной даты
   function toggleWeeklyVisibility(){ const sec=document.getElementById('weeklySection'); sec.style.display=(getViewDate().getDay()===0)?'block':'none'; }
 
-  function renderAll(){ renderTabs(); renderSchedule(); renderMeals(); renderTotals(); renderDailyGoals(); renderWeeklyGoals(); renderStates(); renderHealth(); renderAlpha(); renderHealthWeeklyCard(); updateProgress(); toggleWeeklyVisibility(); }
+  function renderAll(){ renderTabs(); renderSchedule(); renderMeals(); renderTotals(); renderDailyGoals(); renderWeeklyGoals(); renderStates(); renderHealth(); renderHealthWeeklyCard(); updateProgress(); toggleWeeklyVisibility(); }
   loadTimes(); renderAll();
 
   // Навигация недель
