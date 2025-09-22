@@ -4,133 +4,347 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Графики — Личный трекер</title>
+
+  <!-- стиль совместим с index.html -->
   <style>
     :root{
-      --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb; --border:#1f2937; --accent2:#3b82f6;
+      --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb;
+      --accent:#22c55e; --accent2:#3b82f6; --warn:#f59e0b; --danger:#ef4444; --border:#1f2937;
+      --chip-bg:#0b1222;
     }
-    [data-theme="light"]{ --bg:#f7fafc; --card:#fff; --muted:#4b5563; --text:#0f172a; --border:#e5e7eb; --accent2:#2563eb; }
+    [data-theme="light"]{
+      --bg:#f7fafc; --card:#ffffff; --muted:#4b5563; --text:#0f172a;
+      --accent:#16a34a; --accent2:#2563eb; --warn:#d97706; --danger:#dc2626; --border:#e5e7eb;
+      --chip-bg:#eef2ff;
+    }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Inter,Arial,sans-serif}
-    header{position:sticky;top:0;background:linear-gradient(180deg,rgba(15,23,42,.97),rgba(15,23,42,.9));backdrop-filter:blur(8px);border-bottom:1px solid var(--border);z-index:10}
-    [data-theme="light"] header{background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(255,255,255,.9))}
+    header{border-bottom:1px solid var(--border)}
     .wrap{max-width:1024px;margin:0 auto;padding:16px}
-    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--text);font-weight:700;text-decoration:none}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin:12px 0}
-    h1{margin:0;font-size:22px}
-    .muted{color:var(--muted)}
-    .row{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center;margin-bottom:8px}
-    canvas{width:100%;height:220px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(0,0,0,.04))}
-    .legend{display:flex;gap:12px;align-items:center;font-size:12px;color:var(--muted);margin-bottom:8px}
-    .dot{width:10px;height:10px;border-radius:50%}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    @media(max-width:760px){ .grid2{grid-template-columns:1fr} .row{grid-template-columns:90px 1fr} }
+    h1{margin:0 0 8px;font-size:24px}
+    .sub{color:var(--muted);font-size:13px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;margin:12px 0}
+    .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .right{margin-left:auto}
+    .btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--chip-bg);color:var(--text)!important;cursor:pointer;font-weight:700}
+    .btn.primary{background:var(--accent2); color:#fff;}
+    .btn.ghost{background:var(--card)}
+    input[type="date"]{padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text)}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid var(--border);padding:8px;text-align:left}
+    th{color:var(--muted);font-weight:700}
+    .empty{color:var(--muted);padding:12px}
+    canvas{width:100%;height:300px;max-height:50vh}
+    @media(max-width:560px){ h1{font-size:22px} }
   </style>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    // ТЕМА из localStorage для консистентности
+    (function(){
+      const theme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
 </head>
 <body>
   <header>
-    <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-      <h1>📈 Графики</h1>
-      <div style="display:flex;gap:8px">
-        <a class="btn" href="./index.html">← Назад</a>
-        <button class="btn" id="refreshBtn">Обновить</button>
+    <div class="wrap flex" style="justify-content:space-between;align-items:flex-start">
+      <div>
+        <h1>📈 Графики</h1>
+        <div class="sub" id="whoami">—</div>
+      </div>
+      <div class="flex">
+        <a class="btn ghost" href="./index.html">← Назад</a>
       </div>
     </div>
   </header>
 
   <main class="wrap">
-    <div class="card">
-      <div class="legend">
-        <div class="dot" style="background:var(--accent2)"></div> Вес (кг)
+    <section class="card">
+      <div class="flex" style="justify-content:space-between">
+        <div class="flex">
+          <label class="sub">С даты</label>
+          <input type="date" id="fromDate">
+          <label class="sub">по</label>
+          <input type="date" id="toDate">
+          <button class="btn" id="resetRange">Сбросить</button>
+        </div>
+        <div class="flex right">
+          <button class="btn" id="exportCsvBtn">Экспорт CSV</button>
+        </div>
       </div>
-      <canvas id="weightChart" width="800" height="220"></canvas>
-      <div class="muted" style="margin-top:6px">Показываются значения из локального хранилища за последние 90 дней.</div>
-    </div>
+    </section>
 
-    <div class="card">
-      <div class="legend">
-        <div class="dot" style="background:var(--accent2)"></div> Пульс утром (уд/мин)
-      </div>
-      <canvas id="pulseChart" width="800" height="220"></canvas>
-      <div class="muted" style="margin-top:6px">Пустые дни пропускаются. Масштаб подстраивается автоматически.</div>
-    </div>
+    <section class="card">
+      <h3 style="margin-top:0">Вес (кг)</h3>
+      <canvas id="weightChart"></canvas>
+      <div class="sub" id="weightStats" style="margin-top:8px">—</div>
+    </section>
+
+    <section class="card">
+      <h3 style="margin-top:0">Пульс утром (уд/мин)</h3>
+      <canvas id="pulseChart"></canvas>
+      <div class="sub" id="pulseStats" style="margin-top:8px">—</div>
+    </section>
+
+    <section class="card">
+      <h3 style="margin-top:0">Таблица значений</h3>
+      <div id="tableBox" class="empty">Данных пока нет. Открой <b>Личный трекер</b> и начни вводить вес/пульс.</div>
+    </section>
   </main>
 
   <script>
-    const root=document.documentElement;
-    function applyTheme(t){ root.setAttribute('data-theme', t); }
-    applyTheme(localStorage.getItem('theme')||'dark');
+    // === Supabase клиент (те же URL/ключ что и в index.html) ===
+    const SUPABASE_URL = "https://afxbyrypaqnobaalipjm.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_vROzTIfTCdtiea3xfMCcHA_bthD-zZr";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // утилиты
-    function daysAgo(n){ const d=new Date(); d.setDate(d.getDate()-n); d.setHours(0,0,0,0); return d; }
-    const pad=n=>String(n).padStart(2,'0');
-    const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const whoamiEl = document.getElementById('whoami');
+    const fromDateEl = document.getElementById('fromDate');
+    const toDateEl   = document.getElementById('toDate');
+    const resetRangeBtn = document.getElementById('resetRange');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
 
-    function readSeries(prefix, days=90){
-      const arr=[];
-      for(let i=days-1;i>=0;i--){
-        const d=daysAgo(i);
-        const k=`metric:${ymd(d)}:${prefix}`;
-        const v=localStorage.getItem(k);
-        if(v!=null && v!=='') arr.push({x:d, y:Number(v)});
+    const weightCtx = document.getElementById('weightChart').getContext('2d');
+    const pulseCtx  = document.getElementById('pulseChart').getContext('2d');
+
+    let ALL_ROWS = []; // [{ymd, weight, pulse}]
+    let filtered = []; // текущий фильтр по датам
+    let weightChart, pulseChart;
+
+    // Готовим корректный redirect для magic link (GitHub Pages / относит. путь)
+    const REDIRECT_URL = (() => {
+      const u = new URL(window.location.href);
+      let p = u.pathname;
+      if (p.endsWith('.html')) p = p.slice(0, p.lastIndexOf('/')+1);
+      if (!p.endsWith('/')) p += '/';
+      return `${u.origin}${p}`;
+    })();
+
+    // ====== АВТОРИЗАЦИЯ ======
+    async function ensureAuthAndLoad(){
+      try { await sb.auth.exchangeCodeForSession(window.location.href); } catch(_) {}
+      if (/[?#].*(access_token|refresh_token|code)=/i.test(location.href)) {
+        history.replaceState({}, document.title, REDIRECT_URL.replace(/\/$/,'') + '/charts.html');
       }
-      return arr;
+
+      const { data:{ session } } = await sb.auth.getSession();
+      const user = session?.user;
+
+      whoamiEl.textContent = user ? ('• ' + (user.email || user.id)) : 'Не выполнен вход. Открой главную и войди по ссылке из email.';
+      if (!user) return;
+
+      await loadAllDaily(user.id);
+      initDateRange();
+      applyFilterAndRender();
     }
 
-    function lineChart(canvasId, series, colorCssVar='--accent2'){
-      const c=document.getElementById(canvasId);
-      const ctx=c.getContext('2d');
-      const W=c.width, H=c.height, P=24;
-      ctx.clearRect(0,0,W,H);
+    // ====== ЗАГРУЗКА ДАННЫХ ИЗ daily_data ======
+    async function loadAllDaily(userId){
+      ALL_ROWS = [];
+      const { data, error } = await sb.from('daily_data')
+        .select('ymd,data')
+        .eq('user_id', userId)
+        .order('ymd', { ascending: true });
 
-      if(series.length===0){
-        ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted');
-        ctx.font='14px system-ui';
-        ctx.fillText('Нет данных', 12, 24);
+      if (error) {
+        console.warn('loadAllDaily error', error);
         return;
       }
-
-      const xs=series.map((p)=>p.x.getTime());
-      const ys=series.map(p=>p.y);
-      const minX=Math.min(...xs), maxX=Math.max(...xs);
-      let minY=Math.min(...ys), maxY=Math.max(...ys);
-      if(minY===maxY){ minY-=1; maxY+=1; }
-
-      const color=getComputedStyle(document.documentElement).getPropertyValue(colorCssVar).trim();
-      ctx.strokeStyle='#00000022'; ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(P, H-P); ctx.lineTo(W-P, H-P); ctx.stroke();
-
-      ctx.strokeStyle=color; ctx.lineWidth=2;
-      ctx.beginPath();
-      series.forEach((p,i)=>{
-        const x=P+( (p.x.getTime()-minX)/(maxX-minX || 1) )*(W-2*P);
-        const y=H-P- ( (p.y-minY)/(maxY-minY) )*(H-2*P);
-        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-      });
-      ctx.stroke();
-
-      // точки
-      ctx.fillStyle=color;
-      series.forEach((p)=>{
-        const x=P+( (p.x.getTime()-minX)/(maxX-minX || 1) )*(W-2*P);
-        const y=H-P- ( (p.y-minY)/(maxY-minY) )*(H-2*P);
-        ctx.beginPath(); ctx.arc(x,y,2.5,0,Math.PI*2); ctx.fill();
-      });
-
-      // подписи по краям
-      ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
-      ctx.font='12px system-ui';
-      ctx.fillText(series[0] ? ymd(series[0].x) : '', 8, H-6);
-      ctx.textAlign='right';
-      ctx.fillText(series[series.length-1] ? ymd(series[series.length-1].x) : '', W-8, H-6);
-      ctx.textAlign='start';
+      for (const row of (data || [])) {
+        const ymd = row.ymd;
+        const map = row.data || {};
+        const w = map[`metric:${ymd}:weight`];
+        const p = map[`metric:${ymd}:pulse`];
+        const weight = (w===null || w==='' || isNaN(Number(w))) ? null : Number(w);
+        const pulse  = (p===null || p==='' || isNaN(Number(p))) ? null : Number(p);
+        if (weight!=null || pulse!=null) {
+          ALL_ROWS.push({ ymd, weight, pulse });
+        }
+      }
     }
 
-    function render(){
-      lineChart('weightChart', readSeries('weight', 90));
-      lineChart('pulseChart', readSeries('pulse', 90));
+    // ====== ДАТЫ / ФИЛЬТР ======
+    function initDateRange(){
+      if (!ALL_ROWS.length) return;
+      fromDateEl.value = ALL_ROWS[0].ymd;
+      toDateEl.value   = ALL_ROWS[ALL_ROWS.length-1].ymd;
+      fromDateEl.max   = toDateEl.value;
+      toDateEl.min     = fromDateEl.value;
     }
-    render();
-    document.getElementById('refreshBtn').onclick=render;
+
+    function applyFilterAndRender(){
+      if (!ALL_ROWS.length){
+        renderEmpty();
+        return;
+      }
+      const from = fromDateEl.value || ALL_ROWS[0].ymd;
+      const to   = toDateEl.value   || ALL_ROWS[ALL_ROWS.length-1].ymd;
+
+      // валидируем границы
+      const f = from <= to ? from : to;
+      const t = to >= from ? to : from;
+      if (fromDateEl.value !== f) fromDateEl.value = f;
+      if (toDateEl.value   !== t) toDateEl.value   = t;
+
+      filtered = ALL_ROWS.filter(r => r.ymd >= f && r.ymd <= t);
+      renderCharts();
+      renderTable();
+    }
+
+    function renderEmpty(){
+      // зачистка графиков, таблицы
+      if (weightChart){ weightChart.destroy(); weightChart = null; }
+      if (pulseChart){ pulseChart.destroy(); pulseChart = null; }
+      document.getElementById('weightStats').textContent = '—';
+      document.getElementById('pulseStats').textContent = '—';
+      document.getElementById('tableBox').innerHTML = '<div class="empty">Данных пока нет. Открой <b>Личный трекер</b> и начни вводить вес/пульс.</div>';
+    }
+
+    // ====== ГРАФИКИ ======
+    function renderCharts(){
+      const labels = filtered.map(r => r.ymd);
+      const weights = filtered.map(r => r.weight);
+      const pulses  = filtered.map(r => r.pulse);
+
+      // агрегаты
+      const wVals = weights.filter(v => v!=null);
+      const pVals = pulses.filter(v => v!=null);
+
+      const wMin = wVals.length ? Math.min(...wVals) : null;
+      const wMax = wVals.length ? Math.max(...wVals) : null;
+      const wLast= wVals.length ? wVals[wVals.length-1] : null;
+      document.getElementById('weightStats').textContent =
+        wVals.length ? `последнее: ${wLast} кг • мин: ${wMin} • макс: ${wMax}` : '—';
+
+      const pMin = pVals.length ? Math.min(...pVals) : null;
+      const pMax = pVals.length ? Math.max(...pVals) : null;
+      const pLast= pVals.length ? pVals[pVals.length-1] : null;
+      document.getElementById('pulseStats').textContent =
+        pVals.length ? `последнее: ${pLast} уд/мин • мин: ${pMin} • макс: ${pMax}` : '—';
+
+      // Weight chart
+      if (weightChart) weightChart.destroy();
+      weightChart = new Chart(weightCtx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Вес, кг',
+            data: weights,
+            spanGaps: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: getTextColor() }, grid: { color: getGridColor() } },
+            y: { ticks: { color: getTextColor() }, grid: { color: getGridColor() } }
+          }
+        }
+      });
+
+      // Pulse chart
+      if (pulseChart) pulseChart.destroy();
+      pulseChart = new Chart(pulseCtx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Пульс, уд/мин',
+            data: pulses,
+            spanGaps: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: getTextColor() }, grid: { color: getGridColor() } },
+            y: { suggestedMin: 40, suggestedMax: 120, ticks: { color: getTextColor() }, grid: { color: getGridColor() } }
+          }
+        }
+      });
+    }
+
+    function getTextColor(){
+      return getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#94a3b8';
+    }
+    function getGridColor(){
+      const c = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+      return c || '#1f2937';
+    }
+
+    // ====== ТАБЛИЦА ======
+    function renderTable(){
+      const box = document.getElementById('tableBox');
+      if (!filtered.length){
+        box.innerHTML = '<div class="empty">За выбранный диапазон нет данных.</div>';
+        return;
+      }
+      const rows = filtered.map(r => {
+        const w = (r.weight==null || Number.isNaN(r.weight)) ? '' : r.weight;
+        const p = (r.pulse==null  || Number.isNaN(r.pulse))  ? '' : r.pulse;
+        return `<tr><td>${r.ymd}</td><td>${w}</td><td>${p}</td></tr>`;
+      }).join('');
+      box.innerHTML = `
+        <div style="overflow:auto">
+          <table>
+            <thead><tr><th>Дата</th><th>Вес (кг)</th><th>Пульс (уд/мин)</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }
+
+    // ====== CSV ======
+    function toCsv(arr){
+      const header = ['date','weight','pulse'];
+      const lines = [header.join(',')];
+      arr.forEach(r=>{
+        lines.push([r.ymd, r.weight ?? '', r.pulse ?? ''].join(','));
+      });
+      return lines.join('\n');
+    }
+    function downloadCsv(name, text){
+      const blob = new Blob([text], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = name; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 1000);
+    }
+
+    // ====== События ======
+    fromDateEl.addEventListener('change', ()=>{
+      if (toDateEl.value && fromDateEl.value > toDateEl.value) toDateEl.value = fromDateEl.value;
+      applyFilterAndRender();
+    });
+    toDateEl.addEventListener('change', ()=>{
+      if (fromDateEl.value && toDateEl.value < fromDateEl.value) fromDateEl.value = toDateEl.value;
+      applyFilterAndRender();
+    });
+    resetRangeBtn.addEventListener('click', ()=>{
+      if (!ALL_ROWS.length) return;
+      fromDateEl.value = ALL_ROWS[0].ymd;
+      toDateEl.value   = ALL_ROWS[ALL_ROWS.length-1].ymd;
+      applyFilterAndRender();
+    });
+    exportCsvBtn.addEventListener('click', ()=>{
+      const csv = toCsv(filtered.length ? filtered : ALL_ROWS);
+      const name = `tracker_metrics_${(new Date()).toISOString().slice(0,10)}.csv`;
+      downloadCsv(name, csv);
+    });
+
+    // ====== Запуск ======
+    ensureAuthAndLoad();
   </script>
 </body>
 </html>
