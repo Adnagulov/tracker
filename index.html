@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Личный трекер</title>
+  <title>Графики — Личный трекер</title>
+
+  <!-- стиль совместим с index.html -->
   <style>
     :root{
       --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb;
@@ -17,611 +19,332 @@
     }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Inter,Arial,sans-serif}
-
-    /* Шапка обычная (НЕ фиксируется) */
-    header{
-      position:relative; top:auto; background:var(--bg);
-      border-bottom:1px solid var(--border); backdrop-filter:none; z-index:auto;
-    }
-    [data-theme="light"] header{ background:var(--bg); }
-
+    header{border-bottom:1px solid var(--border)}
     .wrap{max-width:1024px;margin:0 auto;padding:16px}
-    h1{margin:0 0 4px;font-size:24px}
+    h1{margin:0 0 8px;font-size:24px}
     .sub{color:var(--muted);font-size:13px}
-
-    .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
-    .tab{flex:1;min-width:120px;text-align:center;padding:12px 10px;border:1px solid var(--border);border-radius:12px;background:var(--card);cursor:pointer;color:var(--text);font-weight:700}
-    .tab.active{outline:2px solid var(--accent2)}
-
-    .grid{display:grid;grid-template-columns:110px 1fr 44px;gap:8px;align-items:center}
     .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;margin:12px 0}
-    .row{display:contents}
-    .time{font-variant-numeric:tabular-nums;color:var(--muted)}
-    .label{font-size:15px}
-    input[type="checkbox"]{width:28px;height:28px}
-    input[type="number"], input[type="time"], input[type="email"]{
-      font-size:16px;padding:8px 10px;border:1px solid var(--border);
-      border-radius:10px;background:transparent;color:var(--text);width:100%;max-width:140px
-    }
-    .muted{color:var(--muted)}
-
-    /* Эмодзи в одну строку */
-    .chips{display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}
-    .chip{padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:var(--chip-bg);color:var(--text);cursor:pointer;font-size:18px}
-    .chip.active{outline:2px solid var(--accent2);}
-    .stateRow{margin:10px 0}
-    .stateTitle{font-size:14px;color:var(--muted);margin-bottom:6px}
-
-    .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);padding:6px 10px;border-radius:999px;background:#0b1024;font-size:12px}
-    [data-theme="light"] .pill{background:#f1f5f9}
     .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:var(--chip-bg);color:var(--text)!important;cursor:pointer;font-weight:700}
-    .btn.primary{background:var(--accent2); color:#fff;}
-    .btn.warn{background:var(--warn); color:#000;}
-    .btn.danger{background:var(--danger); color:#fff;}
-    .btn.ghost{background:var(--card)}
-    .kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-    .kpi .card{padding:14px}
-    .big{font-size:22px;font-weight:800}
-    progress{width:100%;height:14px}
-    footer.sticky{position:relative;border-top:1px solid transparent} /* пустая заглушка */
-    .small{font-size:12px}
     .right{margin-left:auto}
-
-    /* Спарклайны (маленькие графики) */
-    .spark-wrap{display:grid;grid-template-columns:84px 1fr;gap:8px;align-items:center}
-    .spark-title{color:var(--muted);font-size:12px}
-    .spark-kpi{font-size:12px;color:var(--muted)}
-    .spark svg{width:100%;height:40px;display:block}
-    .spark path{fill:none;stroke:currentColor;stroke-width:2}
-    .spark .axis{stroke:currentColor;opacity:.2;stroke-width:1}
-    .spark .dot{fill:currentColor}
-
-    @media (min-width:1025px){
-      .tabs .tab{min-width:140px}
-      .grid{grid-template-columns:140px 1fr 60px}
-    }
-    @media(max-width:560px){
-      .wrap{padding:12px}
-      h1{font-size:22px}
-      .grid{grid-template-columns:88px 1fr 36px; gap:6px}
-      .tab{min-width:100px; padding:10px 10px; font-size:13px}
-      .btn{padding:10px 12px}
-      input[type="number"], input[type="time"], input[type="email"]{max-width:110px}
-      .kpi{grid-template-columns:1fr 1fr}
-    }
+    .btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--chip-bg);color:var(--text)!important;cursor:pointer;font-weight:700}
+    .btn.primary{background:var(--accent2); color:#fff;}
+    .btn.ghost{background:var(--card)}
+    input[type="date"]{padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text)}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid var(--border);padding:8px;text-align:left}
+    th{color:var(--muted);font-weight:700}
+    .empty{color:var(--muted);padding:12px}
+    canvas{width:100%;height:300px;max-height:50vh}
+    @media(max-width:560px){ h1{font-size:22px} }
   </style>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <script>
-    const SUPABASE_URL = "https://afxbyrypaqnobaalipjm.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_vROzTIfTCdtiea3xfMCcHA_bthD-zZr";
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // ТЕМА из localStorage для консистентности
+    (function(){
+      const theme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
   </script>
 </head>
 <body>
   <header>
-    <div class="wrap">
-      <div class="flex" style="align-items:flex-start;justify-content:space-between;">
-        <div>
-          <h1>📅 Личный трекер</h1>
-          <div class="sub" id="dateLine">—</div>
-          <div class="flex" style="margin-top:10px">
-            <span class="pill" id="sportPill">Спорт дня: —</span>
-            <span class="pill" id="sleepPill">Сон: 22:30 → 06:00 (≈7–8 ч)</span>
-            <span class="pill">Цель веса: 80 кг</span>
-          </div>
-        </div>
-        <div class="flex right">
-          <button class="btn" id="themeBtn">🌙/☀️</button>
-          <button class="btn" id="settingsBtn">⚙️</button>
-          <button class="btn" id="exportBtn">Экспорт</button>
-          <label class="btn" for="importInput">Импорт<input id="importInput" type="file" accept="application/json" hidden></label>
-          <button class="btn warn" id="resetDayBtn">Сброс дня</button>
-          <button class="btn primary" id="saveNearBtn">Сохранить</button>
-          <a class="btn ghost" href="./charts.html">Графики</a>
-        </div>
+    <div class="wrap flex" style="justify-content:space-between;align-items:flex-start">
+      <div>
+        <h1>📈 Графики</h1>
+        <div class="sub" id="whoami">—</div>
       </div>
-
-      <div id="authBox" class="flex" style="margin-top:10px">
-        <input id="emailInput" type="email" placeholder="email (для входа по ссылке)" style="max-width:260px">
-        <button class="btn" id="loginBtn">Войти</button>
-        <button class="btn" id="logoutBtn" style="display:none">Выйти</button>
-        <span id="whoami" class="sub"></span>
-      </div>
-
-      <div class="tabs" id="dayTabs"></div>
-
-      <div class="flex" id="weekNav" style="margin-top:6px">
-        <button class="btn" id="prevWeekBtn">⟵ Неделя</button>
-        <div class="pill" id="weekLabel">Неделя —</div>
-        <button class="btn" id="nextWeekBtn">Неделя ⟶</button>
+      <div class="flex">
+        <a class="btn ghost" href="./index.html">← Назад</a>
       </div>
     </div>
   </header>
 
   <main class="wrap">
-    <section class="kpi">
-      <div class="card"><div class="muted small">Выполнено сегодня</div><div class="big" id="doneToday">0%</div><progress id="progToday" max="100" value="0"></progress></div>
-      <div class="card"><div class="muted small">Недельный прогресс</div><div class="big" id="doneWeek">0%</div><progress id="progWeek" max="100" value="0"></progress></div>
-      <div class="card"><div class="muted small">Книга / месяц</div><div class="big" id="bookPages">20 стр/день</div><div class="small muted">Читай 20–30 мин ежедневно</div></div>
-      <div class="card"><div class="muted small">Английский</div><div class="big" id="engDaily">Duolingo 15–30 мин</div><div class="small muted">Подкаст в дороге</div></div>
-
-      <!-- мини-графики здоровья за неделю -->
-      <div class="card" id="healthWeeklyCard">
-        <div class="muted small">Здоровье (неделя)</div>
-        <div class="spark-wrap" style="margin-top:6px">
-          <div>
-            <div class="spark-title">Вес (кг)</div>
-            <div class="spark-kpi" id="weightLast">—</div>
-          </div>
-          <div class="spark" id="weightSpark"></div>
+    <section class="card">
+      <div class="flex" style="justify-content:space-between">
+        <div class="flex">
+          <label class="sub">С даты</label>
+          <input type="date" id="fromDate">
+          <label class="sub">по</label>
+          <input type="date" id="toDate">
+          <button class="btn" id="resetRange">Сбросить</button>
         </div>
-        <div class="spark-wrap" style="margin-top:10px">
-          <div>
-            <div class="spark-title">Пульс утром</div>
-            <div class="spark-kpi" id="pulseLast">—</div>
-          </div>
-          <div class="spark" id="pulseSpark"></div>
+        <div class="flex right">
+          <button class="btn" id="exportCsvBtn">Экспорт CSV</button>
         </div>
       </div>
     </section>
 
     <section class="card">
-      <h3 style="margin-top:0">Будний день — расписание</h3>
-      <div class="grid" id="scheduleGrid"></div>
+      <h3 style="margin-top:0">Вес (кг)</h3>
+      <canvas id="weightChart"></canvas>
+      <div class="sub" id="weightStats" style="margin-top:8px">—</div>
     </section>
 
     <section class="card">
-      <h3 style="margin-top:0">🍴 Питание за день</h3>
-      <div class="grid" id="nutritionMeals"></div>
-      <div class="grid" id="nutritionTotals"></div>
-      <div class="small muted" style="margin-top:8px" id="nutritionHint">
-        Подсветка: &gt;110% от плана — <b style="color:#ef4444">красный</b>, &lt;90% — <b style="color:#2563eb">синий</b>.
-      </div>
+      <h3 style="margin-top:0">Пульс утром (уд/мин)</h3>
+      <canvas id="pulseChart"></canvas>
+      <div class="sub" id="pulseStats" style="margin-top:8px">—</div>
     </section>
 
     <section class="card">
-      <h3 style="margin-top:0">Ежедневные цели</h3>
-      <div class="grid" id="dailyGoals"></div>
-    </section>
-
-    <section class="card" id="weeklySection">
-      <h3 style="margin-top:0">Итоги недели</h3>
-      <div class="grid" id="weeklyGoals"></div>
-      <div class="small muted" style="margin-top:8px">Неделя считается по ISO (пн–вс). «Сброс дня» чистит весь текущий день (расписание, цели и питание).</div>
-    </section>
-
-    <section class="card">
-      <h3 style="margin-top:0">Состояние за день</h3>
-      <div id="stateGrid"></div>
-      <div class="small muted">Выбери по шкале от 1 до 5: 1 — плохо, 5 — отлично.</div>
-    </section>
-
-    <section class="card">
-      <h3 style="margin-top:0">Здоровье (утро)</h3>
-      <div class="grid" id="healthGrid"></div>
+      <h3 style="margin-top:0">Таблица значений</h3>
+      <div id="tableBox" class="empty">Данных пока нет. Открой <b>Личный трекер</b> и начни вводить вес/пульс.</div>
     </section>
   </main>
 
-  <footer class="sticky">
-    <div class="wrap flex"></div>
-  </footer>
-
-  <!-- Настройки -->
-  <div class="settings" id="settings" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:16px">
-    <div class="box" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;max-width:420px;width:100%">
-      <h3 style="margin:0 0 8px">Настройки</h3>
-      <label>Время подъёма</label>
-      <input id="wakeTime" type="time" value="06:00">
-      <label>Время сна</label>
-      <input id="sleepTime" type="time" value="22:30">
-      <div class="flex" style="margin-top:12px;justify-content:flex-end">
-        <button class="btn" id="cancelSettings">Отмена</button>
-        <button class="btn primary" id="saveSettings">Сохранить</button>
-      </div>
-    </div>
-  </div>
-
   <script>
-  /* ====== Дата/утилы ====== */
-  const DAYS_FULL = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
-  const pad=(n)=> String(n).padStart(2,'0');
-  const ymd=(d)=> `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-  function isoWeek(d){ const t = new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-day+3); const first=new Date(Date.UTC(t.getUTCFullYear(),0,4)); const w=1+Math.round(((t-first)/86400000-3+((first.getUTCDay()+6)%7))/7); return `${t.getUTCFullYear()}-W${pad(w)}`;}
-  const today = new Date();
-  function startOfISOWeek(d){ const t=new Date(d.getFullYear(),d.getMonth(),d.getDate()); const day=(t.getDay()+6)%7; t.setDate(t.getDate()-day); t.setHours(0,0,0,0); return t;}
-  function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x;}
-  let viewWeekStart = startOfISOWeek(today);
-  let currentDay = (today.getDay()+6)%7;
-  function getViewDate(){ return addDays(viewWeekStart, currentDay); }
+    // === Supabase клиент (те же URL/ключ что и в index.html) ===
+    const SUPABASE_URL = "https://afxbyrypaqnobaalipjm.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_vROzTIfTCdtiea3xfMCcHA_bthD-zZr";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  /* ====== Тема/настройки ====== */
-  const root=document.documentElement, themeBtn=document.getElementById('themeBtn');
-  function applyTheme(t){ root.setAttribute('data-theme', t); localStorage.setItem('theme', t); }
-  applyTheme(localStorage.getItem('theme')||'dark');
-  themeBtn.onclick=()=> applyTheme(root.getAttribute('data-theme')==='dark'?'light':'dark');
-  const settings = document.getElementById('settings');
-  document.getElementById('settingsBtn').onclick=()=>{ loadTimes(); settings.style.display='flex'; };
-  document.getElementById('cancelSettings').onclick=()=> settings.style.display='none';
-  document.getElementById('saveSettings').onclick=()=>{ localStorage.setItem('wakeTime', document.getElementById('wakeTime').value); localStorage.setItem('sleepTime', document.getElementById('sleepTime').value); loadTimes(); settings.style.display='none'; scheduleSave(); };
-  function loadTimes(){ const w=localStorage.getItem('wakeTime')||'06:00', s=localStorage.getItem('sleepTime')||'22:30'; document.getElementById('wakeTime').value=w; document.getElementById('sleepTime').value=s; document.getElementById('sleepPill').textContent=`Сон: ${s} → ${w} (≈7–8 ч)`; }
+    const whoamiEl = document.getElementById('whoami');
+    const fromDateEl = document.getElementById('fromDate');
+    const toDateEl   = document.getElementById('toDate');
+    const resetRangeBtn = document.getElementById('resetRange');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
 
-  /* ====== Данные/ключи ====== */
-  const baseDay = [
-    ['05:30–06:00','Подъём, вода, дыхание, зарядка'],
-    ['06:00–07:00','Спорт'],
-    ['07:00–07:30','Завтрак (белок + овощи)'],
-    ['08:00–08:40','Дорога → аудиокнига/подкаст'],
-    ['09:00–13:00','Работа (фокус-блоки)'],
-    ['13:00–13:30','Обед + Duolingo'],
-    ['13:30–18:00','Работа (важные задачи)'],
-    ['18:00–18:40','Дорога → англ. подкаст/лекция'],
-    ['19:00–20:00','Ужин (лёгкий белок + овощи)'],
-    ['20:00–21:00','— свободное/семья —'],
-    ['21:00–21:30','Хобби (гитара/синтезатор)'],
-    ['21:30–22:00','Чтение книги'],
-    ['22:00–22:30','Вечерний ритуал, душ'],
-    ['22:30–06:00','Сон']
-  ];
+    const weightCtx = document.getElementById('weightChart').getContext('2d');
+    const pulseCtx  = document.getElementById('pulseChart').getContext('2d');
 
-  /* Обновлённый план спорта по дням */
-  const sportPlan = {
-    0:'Силовая дома',
-    1:'Бег улица',
-    2:'Силовая улица',
-    3:'Бег улица',
-    4:'Силовая дома',
-    5:'Силовая улица',
-    6:'Футбол'
-  };
+    let ALL_ROWS = []; // [{ymd, weight, pulse}]
+    let filtered = []; // текущий фильтр по датам
+    let weightChart, pulseChart;
 
-  const goalsDaily  = ['7+ часов сна','Duolingo 15–30 мин','Аудио в дороге (утро/вечер)','20+ страниц книги','Питание по плану','Спорт дня выполнен'];
-  const goalsWeekly = ['5+ тренировок/активностей','2× силовые','2× футбол','2× бег (интервалы/длинный)','7× Duolingo','7× 20+ страниц книги','План недели составлен'];
+    // Готовим корректный redirect для magic link (GitHub Pages / относит. путь)
+    const REDIRECT_URL = (() => {
+      const u = new URL(window.location.href);
+      let p = u.pathname;
+      if (p.endsWith('.html')) p = p.slice(0, p.lastIndexOf('/')+1);
+      if (!p.endsWith('/')) p += '/';
+      return `${u.origin}${p}`;
+    })();
 
-  const DAY_KEY  =(d,i)=>`day:${ymd(d)}:${i}`;
-  const GOAL_KEY =(d,i)=>`goal:${ymd(d)}:${i}`;
-  const WEEK_KEY =(w,i)=>`wgoal:${w}:${i}`;
-  const NF_KEY   =(d,m,f)=>`n:${ymd(d)}:${m}:${f}`;
-  const STATE_KEY=(d,t)=>`state:${ymd(d)}:${t}`;
-  const PULSE_KEY=(d)=>`metric:${ymd(d)}:pulse`;
-  const WEIGHT_KEY=(d)=>`metric:${ymd(d)}:weight`;
-  const ERECT_KEY =(d)=>`metric:${ymd(d)}:erection`;
-
-  /* ====== Рендер ====== */
-  const tabs=document.getElementById('dayTabs');
-  function renderTabs(){
-    tabs.innerHTML='';
-    DAYS_FULL.forEach((name,i)=>{
-      const b=document.createElement('button');
-      b.className='tab'+(i===currentDay?' active':''); b.textContent=name;
-      b.onclick=()=>{ currentDay=i; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); b.classList.add('active'); renderAll(); syncLoadFor(getViewDate()); };
-      tabs.appendChild(b);
-    });
-    const vd=getViewDate();
-    document.getElementById('dateLine').textContent = `${DAYS_FULL[currentDay]} • ${ymd(vd)}`;
-    document.getElementById('weekLabel').textContent = `Неделя ${isoWeek(vd)}`;
-  }
-
-  const grid=document.getElementById('scheduleGrid'), daily=document.getElementById('dailyGoals'), weekly=document.getElementById('weeklyGoals'), sportPill=document.getElementById('sportPill');
-  function makeRow(time,label,checked,onchange,key){
-    const t=document.createElement('div'); t.className='row';
-    const c1=document.createElement('div'); c1.className='time'; c1.textContent=time; t.appendChild(c1);
-    const c2=document.createElement('div'); c2.className='label'; c2.textContent=label; t.appendChild(c2);
-    const c3=document.createElement('div'); const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=checked; cb.onchange=()=>onchange(cb.checked); c3.appendChild(cb); t.appendChild(c3);
-    cb.setAttribute('data-key',key); return t;
-  }
-  function renderSchedule(){
-    const vd=getViewDate(); grid.innerHTML=''; sportPill.textContent=`Спорт дня: ${sportPlan[currentDay]}`;
-    baseDay.forEach((it,i)=>{ const key=DAY_KEY(vd,i); const saved=localStorage.getItem(key)==='1';
-      grid.appendChild(makeRow(it[0],it[1],saved,(v)=>{ localStorage.setItem(key,v?'1':'0'); updateProgress(); scheduleSave(); },key)); });
-  }
-  function renderDailyGoals(){
-    const vd=getViewDate(); daily.innerHTML='';
-    goalsDaily.forEach((lab,i)=>{ const key=GOAL_KEY(vd,i); const saved=localStorage.getItem(key)==='1';
-      daily.appendChild(makeRow('—',lab,saved,(v)=>{ localStorage.setItem(key,v?'1':'0'); updateProgress(); scheduleSave(); },key)); });
-  }
-  function renderWeeklyGoals(){
-    weekly.innerHTML=''; const w=isoWeek(getViewDate());
-    goalsWeekly.forEach((lab,i)=>{ const key=WEEK_KEY(w,i); const saved=localStorage.getItem(key)==='1';
-      weekly.appendChild(makeRow('Неделя',lab,saved,(v)=>{ localStorage.setItem(key,v?'1':'0'); updateProgress(); scheduleSave(); },key)); });
-  }
-  function updateProgress(){
-    const vd=getViewDate(); const dayTotal=baseDay.length+goalsDaily.length;
-    let done=0; for(let i=0;i<baseDay.length;i++) if(localStorage.getItem(DAY_KEY(vd,i))==='1') done++;
-    for(let i=0;i<goalsDaily.length;i++) if(localStorage.getItem(GOAL_KEY(vd,i))==='1') done++;
-    const dp=Math.round(100*done/Math.max(1,dayTotal)); document.getElementById('doneToday').textContent=dp+'%'; document.getElementById('progToday').value=dp;
-    const w=isoWeek(vd); let wDone=0; for(let i=0;i<goalsWeekly.length;i++) if(localStorage.getItem(WEEK_KEY(w,i))==='1') wDone++;
-    const wp=Math.round(100*wDone/Math.max(1,goalsWeekly.length)); document.getElementById('doneWeek').textContent=wp+'%'; document.getElementById('progWeek').value=wp;
-  }
-
-  /* ====== Питание ====== */
-  const mealsGrid=document.getElementById('nutritionMeals'), totalsGrid=document.getElementById('nutritionTotals');
-  const MEALS=['Завтрак','Обед','Ужин','Перекусы']; const N_FIELDS=['Калории (ккал)','Белки (г)','Жиры (г)','Углеводы (г)'];
-  const getNum=(k)=>parseInt(localStorage.getItem(k)||0); const setNum=(k,v)=>localStorage.setItem(k,String(v));
-
-  // Плановые значения
-  const PLANS = {
-    'Калории (ккал)': 1950,
-    'Белки (г)': 210,
-    'Жиры (г)': 55,
-    'Углеводы (г)': 150
-  };
-
-  function renderMeals(){
-    const vd=getViewDate(); mealsGrid.innerHTML='';
-    const header=document.createElement('div'); header.className='row'; header.innerHTML='<div class="time">Приём</div><div class="label">КБЖУ</div><div></div>'; mealsGrid.appendChild(header);
-    MEALS.forEach(meal=>{
-      const row=document.createElement('div'); row.className='row'; const c1=document.createElement('div'); c1.className='time'; c1.textContent=meal; row.appendChild(c1);
-      const c2=document.createElement('div'); c2.className='label'; const wrap=document.createElement('div'); wrap.className='flex';
-      N_FIELDS.forEach(f=>{ const key=NF_KEY(vd,meal,f); const inp=document.createElement('input'); inp.type='number'; inp.min='0'; inp.placeholder='0'; inp.value=getNum(key);
-        inp.onchange=()=>{ setNum(key,parseInt(inp.value||0)); renderTotals(); scheduleSave(); };
-        const lbl=document.createElement('span'); lbl.className='muted small'; lbl.textContent=f.split(' ')[0]+':'; const box=document.createElement('div'); box.className='flex'; box.appendChild(lbl); box.appendChild(inp); wrap.appendChild(box);
-      });
-      c2.appendChild(wrap); row.appendChild(c2); row.appendChild(document.createElement('div')); mealsGrid.appendChild(row);
-    });
-  }
-  function renderTotals(){
-    const vd = getViewDate();
-    totalsGrid.innerHTML = '';
-    const sums={'Калории (ккал)':0,'Белки (г)':0,'Жиры (г)':0,'Углеводы (г)':0};
-    MEALS.forEach(m=>N_FIELDS.forEach(f=> { sums[f]+=getNum(NF_KEY(vd,m,f)); }));
-
-    N_FIELDS.forEach(field=>{
-      const row=document.createElement('div'); row.className='row';
-      const c1=document.createElement('div'); c1.className='time'; c1.textContent=field; row.appendChild(c1);
-
-      const fact=sums[field]; const plan=PLANS[field]??0; const pct=plan?Math.round((fact/plan)*100):0;
-      const c2=document.createElement('div'); c2.className='label'; c2.textContent=`${fact} / ${plan} (${pct}%)`;
-      if(plan){
-        if(fact>plan*1.10) c2.style.color='#ef4444';
-        else if(fact<plan*0.90) c2.style.color='#2563eb';
-        else c2.style.color='inherit';
-      }
-      row.appendChild(c2);
-      row.appendChild(document.createElement('div')); totalsGrid.appendChild(row);
-    });
-  }
-
-  /* ====== Состояние ====== */
-  const stateGrid=document.getElementById('stateGrid');
-  const stateOptions=[{v:1,label:'😖 1'},{v:2,label:'😕 2'},{v:3,label:'😐 3'},{v:4,label:'🙂 4'},{v:5,label:'😄 5'}];
-  function stateRow(title,type){
-    const vd=getViewDate(); const box=document.createElement('div'); box.className='stateRow';
-    const h=document.createElement('div'); h.className='stateTitle'; h.textContent=title; box.appendChild(h);
-    const wrap=document.createElement('div'); wrap.className='chips'; 
-    const savedRaw = localStorage.getItem(STATE_KEY(vd,type));
-    const saved = savedRaw===null ? null : Number(savedRaw);
-    stateOptions.forEach(o=>{ 
-      const b=document.createElement('button'); 
-      b.type='button'; 
-      b.className='chip'+(saved===o.v?' active':''); 
-      b.textContent=o.label; 
-      b.onclick=()=>{ localStorage.setItem(STATE_KEY(vd,type),String(o.v)); renderStates(); scheduleSave(); }; 
-      wrap.appendChild(b);
-    });
-    box.appendChild(wrap); return box;
-  }
-  function renderStates(){ stateGrid.innerHTML=''; stateGrid.appendChild(stateRow('Эмоционально','mood')); stateGrid.appendChild(stateRow('Физически','body')); }
-
-  /* ====== Здоровье (утро): Пульс / Вес / Эрекция ====== */
-  const healthGrid=document.getElementById('healthGrid');
-  function renderHealth(){
-    const vd=getViewDate(); healthGrid.innerHTML='';
-    // Пульс (отдельный ключ)
-    let r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Пульс утром</div>`; 
-    let c=document.createElement('div'); c.className='label';
-    let i=document.createElement('input'); i.type='number'; i.min='30'; i.max='150'; i.placeholder='уд/мин'; 
-    i.value = localStorage.getItem(PULSE_KEY(vd)) ?? ''; 
-    i.onchange=()=>{ localStorage.setItem(PULSE_KEY(vd), String(i.value||'')); scheduleSave();}; 
-    c.appendChild(i); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
-
-    // Вес (отдельный ключ)
-    r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Вес (кг)</div>`; 
-    c=document.createElement('div'); c.className='label';
-    i=document.createElement('input'); i.type='number'; i.min='40'; i.max='200'; i.step='0.1'; i.placeholder='кг'; 
-    i.value = localStorage.getItem(WEIGHT_KEY(vd)) ?? ''; 
-    i.onchange=()=>{ localStorage.setItem(WEIGHT_KEY(vd), String(i.value||'')); scheduleSave();}; 
-    c.appendChild(i); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
-
-    // Эрекция (ничего не выбрано по умолчанию)
-    r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Эрекция</div>`; 
-    c=document.createElement('div'); c.className='label'; 
-    const wrap=document.createElement('div'); wrap.className='chips'; 
-    const savedRaw = localStorage.getItem(ERECT_KEY(vd)); // null => ничего не активно
-    const saved = savedRaw===null ? null : Number(savedRaw);
-    [['Да',1],['Нет',0]].forEach(([txt,val])=>{
-      const b=document.createElement('button'); 
-      b.type='button'; 
-      b.className='chip'+(saved===val?' active':''); 
-      b.textContent=txt; 
-      b.onclick=()=>{ localStorage.setItem(ERECT_KEY(vd), String(val)); renderHealth(); scheduleSave();};
-      wrap.appendChild(b);
-    });
-    c.appendChild(wrap); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
-  }
-
-  /* ====== Мини-графики недели ====== */
-  function getWeekDates(){ const s=viewWeekStart; return Array.from({length:7},(_,i)=>addDays(s,i)); }
-  function collectMetricSeries(keyFn){ return getWeekDates().map(d=>{ const v=localStorage.getItem(keyFn(d)); return v==null||v===''?null:Number(v); }); }
-  function renderSpark(containerId, series, opts){
-    const el=document.getElementById(containerId); el.innerHTML='';
-    const w=el.clientWidth||220, h=40, pad=2, svgNS='http://www.w3.org/2000/svg';
-    const svg=document.createElementNS(svgNS,'svg'); svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
-    const axis=document.createElementNS(svgNS,'line'); axis.setAttribute('x1',0);axis.setAttribute('y1',h-1);axis.setAttribute('x2',w);axis.setAttribute('y2',h-1);axis.setAttribute('class','axis'); svg.appendChild(axis);
-    const xs=series.map((_,i)=> i/(series.length-1||1));
-    const vals=series.filter(v=>v!=null); if(!vals.length){ el.appendChild(svg); return; }
-    let min=opts?.min ?? Math.min(...vals), max=opts?.max ?? Math.max(...vals); if(min===max){min-=1;max+=1;}
-    const path=document.createElementNS(svgNS,'path'); let d='';
-    series.forEach((v,i)=>{ const x=pad+xs[i]*(w-2*pad); const y=v==null?(h-pad):(h-pad)-((v-min)/(max-min))*(h-2*pad); d+=(i===0?'M':'L')+`${x},${y} `; }); path.setAttribute('d',d.trim()); svg.appendChild(path);
-    const last=[...series.keys()].reverse().find(i=>series[i]!=null); if(last!=null){ const xv=pad+xs[last]*(w-2*pad); const yv=(h-pad)-((series[last]-min)/(max-min))*(h-2*pad); const dot=document.createElementNS(svgNS,'circle'); dot.setAttribute('cx',xv);dot.setAttribute('cy',yv);dot.setAttribute('r',2.5);dot.setAttribute('class','dot'); svg.appendChild(dot); }
-    el.appendChild(svg);
-  }
-  function renderHealthWeeklyCard(){
-    const wSeries=collectMetricSeries(d=>`metric:${ymd(d)}:weight`);
-    const lastW=[...wSeries].reverse().find(v=>v!=null); document.getElementById('weightLast').textContent=lastW!=null?`${lastW} кг`:'—';
-    const pSeries=collectMetricSeries(d=>`metric:${ymd(d)}:pulse`);
-    const lastP=[...pSeries].reverse().find(v=>v!=null); document.getElementById('pulseLast').textContent=lastP!=null?`${lastP} уд/мин`:'—';
-    renderSpark('weightSpark', wSeries, {});
-    renderSpark('pulseSpark', pSeries, {min:40,max:120});
-  }
-
-  /* ====== Экспорт/импорт ====== */
-  document.getElementById('exportBtn').onclick=()=>{
-    const data={}; 
-    for(let i=0;i<localStorage.length;i++){ 
-      const k=localStorage.key(i); if(!k) continue;
-      if(k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k.startsWith('state:')||k.startsWith('metric:')||k==='theme'||k==='wakeTime'||k==='sleepTime'){ 
-        data[k]=localStorage.getItem(k); 
-      }
-    }
-    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); 
-    const url=URL.createObjectURL(blob); 
-    const a=document.createElement('a'); a.href=url; a.download='tracker-backup.json'; a.click(); 
-    setTimeout(()=>URL.revokeObjectURL(url),1000);
-  };
-  document.getElementById('importInput').onchange=async(e)=>{ 
-    const f=e.target.files[0]; if(!f) return; 
-    const t=await f.text();
-    try{ 
-      const data=JSON.parse(t); 
-      Object.entries(data).forEach(([k,v])=>{ 
-        if(k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k.startsWith('state:')||k.startsWith('metric:')||k==='theme'||k==='wakeTime'||k==='sleepTime') 
-          localStorage.setItem(k,String(v));
-      });
-      applyTheme(localStorage.getItem('theme')||'dark'); 
-      loadTimes(); 
-      renderAll(); 
-      alert('Импорт завершён ✅'); 
-      scheduleSave();
-    }catch{ alert('Ошибка импорта'); } 
-  };
-
-  /* ====== Сброс/Сохранить ====== */
-  document.getElementById('resetDayBtn').onclick=()=>{
-    const vd=getViewDate();
-    for(let i=0;i<baseDay.length;i++) localStorage.removeItem(DAY_KEY(vd,i));
-    for(let i=0;i<goalsDaily.length;i++) localStorage.removeItem(GOAL_KEY(vd,i));
-    ['Завтрак','Обед','Ужин','Перекусы'].forEach(m=>['Калории (ккал)','Белки (г)','Жиры (г)','Углеводы (г)'].forEach(f=>localStorage.removeItem(NF_KEY(vd,m,f))));
-    ['mood','body'].forEach(t=> localStorage.removeItem(STATE_KEY(vd,t)));
-    [PULSE_KEY,WEIGHT_KEY,ERECT_KEY].forEach(fn=> localStorage.removeItem(fn(vd)));
-    renderAll(); scheduleSave();
-  };
-  document.getElementById('saveNearBtn').onclick=()=> syncSaveFor(getViewDate());
-
-  /* ====== Supabase sync (по выбранной дате) ====== */
-  async function sbGetUser(){ const {data:{user}}=await sb.auth.getUser(); return user; }
-  function collectDailyFor(d){
-    const s=ymd(d), out={};
-    for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k) continue;
-      if(k.startsWith('day:'+s)||k.startsWith('goal:'+s)||k.startsWith('n:'+s)||k.startsWith('state:'+s)||k.startsWith('metric:'+s)) out[k]=localStorage.getItem(k);
-    } return out;
-  }
-  function collectWeeklyFor(d){ const w=isoWeek(d), out={}; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k?.startsWith('wgoal:'+w+':')) out[k]=localStorage.getItem(k);} return out; }
-  function applyData(map){ Object.entries(map||{}).forEach(([k,v])=>localStorage.setItem(k,v)); }
-
-  async function syncLoadFor(d){
-    const user=await sbGetUser(); if(!user) return;
-    const s=ymd(d), w=isoWeek(d);
-    const {data:drow, error:e1}=await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd',s).maybeSingle();
-    if(e1) console.warn('daily_data load error', e1);
-    applyData(drow?.data);
-    const {data:wrow, error:e2}=await sb.from('weekly_data').select('data').eq('user_id',user.id).eq('week_id',w).maybeSingle();
-    if(e2) console.warn('weekly_data load error', e2);
-    applyData(wrow?.data);
-    renderAll();
-  }
-  async function syncSaveFor(d){
-    const user=await sbGetUser(); if(!user) return;
-    const s=ymd(d), w=isoWeek(d);
-    const daily=collectDailyFor(d), weekly=collectWeeklyFor(d);
-    if(Object.keys(daily).length){
-      const { error } = await sb.from('daily_data').upsert({user_id:user.id, ymd:s, data:daily,  updated_at:new Date().toISOString()},{onConflict:'user_id,ymd'});
-      if(error) { console.warn('daily_data save error', error); alert('Ошибка сохранения дня: '+error.message); }
-    }
-    if(Object.keys(weekly).length){
-      const { error } = await sb.from('weekly_data').upsert({user_id:user.id, week_id:w, data:weekly, updated_at:new Date().toISOString()},{onConflict:'user_id,week_id'});
-      if(error) { console.warn('weekly_data save error', error); alert('Ошибка сохранения недели: '+error.message); }
-    }
-  }
-  let saveTimer; function scheduleSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>syncSaveFor(getViewDate()),800); }
-  try{ sb.channel('changes')
-      .on('postgres_changes',{event:'*',schema:'public',table:'daily_data'},()=>syncLoadFor(getViewDate()))
-      .on('postgres_changes',{event:'*',schema:'public',table:'weekly_data'},()=>syncLoadFor(getViewDate()))
-      .subscribe(); }catch(e){}
-
-  /* ====== AUTH: Magic Link ====== */
-  const loginBtn   = document.getElementById('loginBtn');
-  const logoutBtn  = document.getElementById('logoutBtn');
-  const whoamiEl   = document.getElementById('whoami');
-  const emailInput = document.getElementById('emailInput');
-
-  // корректный Redirect URL для GitHub Pages (/tracker/)
-  const REDIRECT_URL = (() => {
-    const u = new URL(window.location.href);
-    let p = u.pathname;
-    if (p.endsWith('.html')) p = p.slice(0, p.lastIndexOf('/')+1);
-    if (!p.endsWith('/')) p += '/';
-    return `${u.origin}${p}`;
-  })();
-
-  loginBtn.onclick = async ()=>{
-    const email = emailInput.value.trim();
-    if(!email) return alert('Введи email');
-    try {
-      const { error } = await sb.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: true,
-          emailRedirectTo: REDIRECT_URL
-        }
-      });
-      if (error) return alert('Ошибка входа: ' + error.message);
-      alert('Письмо со ссылкой отправлено. Открой ссылку с этого устройства.');
-    } catch (e) {
-      alert('Сетевая ошибка. Проверь URL в Supabase (Site/Redirect URLs) и блокировщики.');
-    }
-  };
-
-  logoutBtn.onclick = async ()=>{
-    await sb.auth.signOut();
-    whoamiEl.textContent = '';
-    logoutBtn.style.display = 'none';
-    alert('Вы вышли из аккаунта');
-  };
-
-  // Обработка редиректа после клика по magic link
-  (async ()=>{
-    try {
+    // ====== АВТОРИЗАЦИЯ ======
+    async function ensureAuthAndLoad(){
       try { await sb.auth.exchangeCodeForSession(window.location.href); } catch(_) {}
       if (/[?#].*(access_token|refresh_token|code)=/i.test(location.href)) {
-        history.replaceState({}, document.title, REDIRECT_URL);
+        history.replaceState({}, document.title, REDIRECT_URL.replace(/\/$/,'') + '/charts.html');
       }
+
       const { data:{ session } } = await sb.auth.getSession();
       const user = session?.user;
-      whoamiEl.textContent = user ? ('• ' + (user.email || user.id)) : '';
-      logoutBtn.style.display = user ? 'inline-flex' : 'none';
-      if (user) await syncLoadFor(getViewDate());
-    } catch {}
-  })();
 
-  // Подписка — обновляем UI по смене сессии
-  sb.auth.onAuthStateChange(async (_e, session)=>{
-    const user = session?.user;
-    whoamiEl.textContent = user ? ('• ' + (user.email || user.id)) : '';
-    logoutBtn.style.display = user ? 'inline-flex' : 'none';
-  });
+      whoamiEl.textContent = user ? ('• ' + (user.email || user.id)) : 'Не выполнен вход. Открой главную и войди по ссылке из email.';
+      if (!user) return;
 
-  // «Итоги недели» только в воскресенье выбранной даты
-  function toggleWeeklyVisibility(){ const sec=document.getElementById('weeklySection'); sec.style.display=(getViewDate().getDay()===0)?'block':'none'; }
+      await loadAllDaily(user.id);
+      initDateRange();
+      applyFilterAndRender();
+    }
 
-  function renderAll(){ renderTabs(); renderSchedule(); renderMeals(); renderTotals(); renderDailyGoals(); renderWeeklyGoals(); renderStates(); renderHealth(); renderHealthWeeklyCard(); updateProgress(); toggleWeeklyVisibility(); }
-  loadTimes(); renderAll();
+    // ====== ЗАГРУЗКА ДАННЫХ ИЗ daily_data ======
+    async function loadAllDaily(userId){
+      ALL_ROWS = [];
+      const { data, error } = await sb.from('daily_data')
+        .select('ymd,data')
+        .eq('user_id', userId)
+        .order('ymd', { ascending: true });
 
-  // Навигация недель
-  document.getElementById('prevWeekBtn').onclick=()=>{ viewWeekStart=addDays(viewWeekStart,-7); renderAll(); syncLoadFor(getViewDate()); };
-  document.getElementById('nextWeekBtn').onclick=()=>{ viewWeekStart=addDays(viewWeekStart, 7); renderAll(); syncLoadFor(getViewDate()); };
+      if (error) {
+        console.warn('loadAllDaily error', error);
+        return;
+      }
+      for (const row of (data || [])) {
+        const ymd = row.ymd;
+        const map = row.data || {};
+        const w = map[`metric:${ymd}:weight`];
+        const p = map[`metric:${ymd}:pulse`];
+        const weight = (w===null || w==='' || isNaN(Number(w))) ? null : Number(w);
+        const pulse  = (p===null || p==='' || isNaN(Number(p))) ? null : Number(p);
+        if (weight!=null || pulse!=null) {
+          ALL_ROWS.push({ ymd, weight, pulse });
+        }
+      }
+    }
+
+    // ====== ДАТЫ / ФИЛЬТР ======
+    function initDateRange(){
+      if (!ALL_ROWS.length) return;
+      fromDateEl.value = ALL_ROWS[0].ymd;
+      toDateEl.value   = ALL_ROWS[ALL_ROWS.length-1].ymd;
+      fromDateEl.max   = toDateEl.value;
+      toDateEl.min     = fromDateEl.value;
+    }
+
+    function applyFilterAndRender(){
+      if (!ALL_ROWS.length){
+        renderEmpty();
+        return;
+      }
+      const from = fromDateEl.value || ALL_ROWS[0].ymd;
+      const to   = toDateEl.value   || ALL_ROWS[ALL_ROWS.length-1].ymd;
+
+      // валидируем границы
+      const f = from <= to ? from : to;
+      const t = to >= from ? to : from;
+      if (fromDateEl.value !== f) fromDateEl.value = f;
+      if (toDateEl.value   !== t) toDateEl.value   = t;
+
+      filtered = ALL_ROWS.filter(r => r.ymd >= f && r.ymd <= t);
+      renderCharts();
+      renderTable();
+    }
+
+    function renderEmpty(){
+      // зачистка графиков, таблицы
+      if (weightChart){ weightChart.destroy(); weightChart = null; }
+      if (pulseChart){ pulseChart.destroy(); pulseChart = null; }
+      document.getElementById('weightStats').textContent = '—';
+      document.getElementById('pulseStats').textContent = '—';
+      document.getElementById('tableBox').innerHTML = '<div class="empty">Данных пока нет. Открой <b>Личный трекер</b> и начни вводить вес/пульс.</div>';
+    }
+
+    // ====== ГРАФИКИ ======
+    function renderCharts(){
+      const labels = filtered.map(r => r.ymd);
+      const weights = filtered.map(r => r.weight);
+      const pulses  = filtered.map(r => r.pulse);
+
+      // агрегаты
+      const wVals = weights.filter(v => v!=null);
+      const pVals = pulses.filter(v => v!=null);
+
+      const wMin = wVals.length ? Math.min(...wVals) : null;
+      const wMax = wVals.length ? Math.max(...wVals) : null;
+      const wLast= wVals.length ? wVals[wVals.length-1] : null;
+      document.getElementById('weightStats').textContent =
+        wVals.length ? `последнее: ${wLast} кг • мин: ${wMin} • макс: ${wMax}` : '—';
+
+      const pMin = pVals.length ? Math.min(...pVals) : null;
+      const pMax = pVals.length ? Math.max(...pVals) : null;
+      const pLast= pVals.length ? pVals[pVals.length-1] : null;
+      document.getElementById('pulseStats').textContent =
+        pVals.length ? `последнее: ${pLast} уд/мин • мин: ${pMin} • макс: ${pMax}` : '—';
+
+      // Weight chart
+      if (weightChart) weightChart.destroy();
+      weightChart = new Chart(weightCtx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Вес, кг',
+            data: weights,
+            spanGaps: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: getTextColor() }, grid: { color: getGridColor() } },
+            y: { ticks: { color: getTextColor() }, grid: { color: getGridColor() } }
+          }
+        }
+      });
+
+      // Pulse chart
+      if (pulseChart) pulseChart.destroy();
+      pulseChart = new Chart(pulseCtx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Пульс, уд/мин',
+            data: pulses,
+            spanGaps: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: getTextColor() }, grid: { color: getGridColor() } },
+            y: { suggestedMin: 40, suggestedMax: 120, ticks: { color: getTextColor() }, grid: { color: getGridColor() } }
+          }
+        }
+      });
+    }
+
+    function getTextColor(){
+      return getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#94a3b8';
+    }
+    function getGridColor(){
+      const c = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+      return c || '#1f2937';
+    }
+
+    // ====== ТАБЛИЦА ======
+    function renderTable(){
+      const box = document.getElementById('tableBox');
+      if (!filtered.length){
+        box.innerHTML = '<div class="empty">За выбранный диапазон нет данных.</div>';
+        return;
+      }
+      const rows = filtered.map(r => {
+        const w = (r.weight==null || Number.isNaN(r.weight)) ? '' : r.weight;
+        const p = (r.pulse==null  || Number.isNaN(r.pulse))  ? '' : r.pulse;
+        return `<tr><td>${r.ymd}</td><td>${w}</td><td>${p}</td></tr>`;
+      }).join('');
+      box.innerHTML = `
+        <div style="overflow:auto">
+          <table>
+            <thead><tr><th>Дата</th><th>Вес (кг)</th><th>Пульс (уд/мин)</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }
+
+    // ====== CSV ======
+    function toCsv(arr){
+      const header = ['date','weight','pulse'];
+      const lines = [header.join(',')];
+      arr.forEach(r=>{
+        lines.push([r.ymd, r.weight ?? '', r.pulse ?? ''].join(','));
+      });
+      return lines.join('\n');
+    }
+    function downloadCsv(name, text){
+      const blob = new Blob([text], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = name; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 1000);
+    }
+
+    // ====== События ======
+    fromDateEl.addEventListener('change', ()=>{
+      if (toDateEl.value && fromDateEl.value > toDateEl.value) toDateEl.value = fromDateEl.value;
+      applyFilterAndRender();
+    });
+    toDateEl.addEventListener('change', ()=>{
+      if (fromDateEl.value && toDateEl.value < fromDateEl.value) fromDateEl.value = toDateEl.value;
+      applyFilterAndRender();
+    });
+    resetRangeBtn.addEventListener('click', ()=>{
+      if (!ALL_ROWS.length) return;
+      fromDateEl.value = ALL_ROWS[0].ymd;
+      toDateEl.value   = ALL_ROWS[ALL_ROWS.length-1].ymd;
+      applyFilterAndRender();
+    });
+    exportCsvBtn.addEventListener('click', ()=>{
+      const csv = toCsv(filtered.length ? filtered : ALL_ROWS);
+      const name = `tracker_metrics_${(new Date()).toISOString().slice(0,10)}.csv`;
+      downloadCsv(name, csv);
+    });
+
+    // ====== Запуск ======
+    ensureAuthAndLoad();
   </script>
 </body>
 </html>
