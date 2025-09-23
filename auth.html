@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Авторизация…</title>
+  <style>
+    body{margin:0;font:16px/1.5 system-ui,-apple-system,Segoe UI,Inter,Arial,sans-serif;background:#0f172a;color:#e5e7eb;display:grid;place-items:center;height:100dvh}
+    .box{max-width:520px;padding:24px;border:1px solid #1f2937;border-radius:12px;background:#111827}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://afxbyrypaqnobaalipjm.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_vROzTIfTCdtiea3xfMCcHA_bthD-zZr";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    (async () => {
+      try {
+        // Обмениваем код на сессию (поддерживает ?code=…)
+        await sb.auth.exchangeCodeForSession(window.location.href);
+      } catch (e) {
+        // Пытаемся альтернативный вариант (если провайдер пришлёт токены во фрагменте)
+        try {
+          const url = new URL(window.location.href);
+          const access_token  = url.searchParams.get('access_token') || url.hash.match(/access_token=([^&]+)/)?.[1];
+          const refresh_token = url.searchParams.get('refresh_token')|| url.hash.match(/refresh_token=([^&]+)/)?.[1];
+          if (access_token && refresh_token) {
+            await sb.auth.setSession({ access_token, refresh_token });
+          }
+        } catch {}
+      }
+      // Куда возвращаться
+      const fallback = (location.origin + location.pathname).replace(/[^/]+$/,'') + 'index.html';
+      const returnTo = localStorage.getItem('returnTo') || fallback;
+      localStorage.removeItem('returnTo');
+      location.replace(returnTo);
+    })();
+  </script>
+</head>
+<body>
+  <div class="box">
+    <b>Завершаем вход…</b><br>
+    Если страница «зависла», вернитесь назад и откройте письмо через «Открыть в браузере».
+  </div>
+</body>
+</html>
