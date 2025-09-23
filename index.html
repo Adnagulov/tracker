@@ -403,14 +403,69 @@
   }
   function collectWeeklyFor(d){ const w=isoWeek(d), out={}; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k?.startsWith('wgoal:'+w+':')) out[k]=localStorage.getItem(k);} return out; }
   function applyData(map){ Object.entries(map||{}).forEach(([k,v])=>localStorage.setItem(k,v)); }
-
-  async function syncLoadFor(d){
-    const user=await sbGetUser(); if(!user) return;
-    const s=ymd(d), w=isoWeek(d);
-    const {data:drow}=await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd',s).maybeSingle(); applyData(drow?.data);
-    const {data:wrow}=await sb.from('weekly_data').select('data').eq('user_id',user.id).eq('week_id',w).maybeSingle(); applyData(wrow?.data);
-    renderAll();
+function clearDailyFor(d){
+  const s = ymd(d);
+  const prefixes = [
+    `day:${s}:`,
+    `goal:${s}:`,
+    `n:${s}:`,
+    `state:${s}:`,
+    `metric:${s}:`,
+    `circ:${s}:`,
+    `w:${s}:` // ключи тренировки тоже чистим, если есть
+  ];
+  const toDelete = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k) continue;
+    if (prefixes.some(p => k.startsWith(p))) toDelete.push(k);
   }
+  toDelete.forEach(k => localStorage.removeItem(k));
+}
+
+function clearWeeklyFor(d){
+  const w = isoWeek(d);
+  const toDelete = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k) continue;
+    if (k.startsWith(`wgoal:${w}:`)) toDelete.push(k);
+  }
+  toDelete.forEach(k => localStorage.removeItem(k));
+}
+
+async function syncLoadFor(d){
+  const user = await sbGetUser();
+  if (!user) return;
+
+  const s = ymd(d);
+  const w = isoWeek(d);
+
+  const { data: drow } = await sb
+    .from('daily_data')
+    .select('data')
+    .eq('user_id', user.id)
+    .eq('ymd', s)
+    .maybeSingle();
+
+  const { data: wrow } = await sb
+    .from('weekly_data')
+    .select('data')
+    .eq('user_id', user.id)
+    .eq('week_id', w)
+    .maybeSingle();
+
+  // 1) сначала чистим локальное за выбранную дату/неделю
+  clearDailyFor(d);
+  clearWeeklyFor(d);
+
+  // 2) применяем, только если есть что применить
+  if (drow?.data) applyData(drow.data);
+  if (wrow?.data) applyData(wrow.data);
+
+  renderAll();
+}
+
   async function syncSaveFor(d){
     const user=await sbGetUser(); if(!user) return;
     const s=ymd(d), w=isoWeek(d);
