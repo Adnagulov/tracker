@@ -282,6 +282,26 @@ function collectForDay(){
   }
   return out;
 }
+function clearDailyFor(d){
+  const s = ymd(d);
+  const prefixes = [
+    `w:${s}:`,       // подходы и метрики этой страницы
+    `day:${s}:`,     // на всякий случай (если отмечаешь спорт отсюда)
+    `goal:${s}:`,
+    `n:${s}:`,
+    `state:${s}:`,
+    `metric:${s}:`,
+    `circ:${s}:`
+  ];
+  const toDelete = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k) continue;
+    if (prefixes.some(p => k.startsWith(p))) toDelete.push(k);
+  }
+  toDelete.forEach(k => localStorage.removeItem(k));
+}
+
 async function syncSave(){
   const u=await sbUser(); if(!u) return;
   const data=collectForDay();
@@ -289,11 +309,27 @@ async function syncSave(){
     await sb.from('daily_data').upsert({user_id:u.id, ymd:dateStr, data, updated_at:new Date().toISOString()},{onConflict:'user_id,ymd'});
   }
 }
-async function syncLoad(){
-  const u=await sbUser(); if(!u){ renderProgram(); return; }
-  const {data:drow}=await sb.from('daily_data').select('data').eq('user_id',u.id).eq('ymd',dateStr).maybeSingle();
-  (drow?.data)&&Object.entries(drow.data).forEach(([k,v])=>localStorage.setItem(k,v));
-  renderProgram();
+async function syncLoadFor(d){
+  const user = await sbGetUser();
+  if (!user) return;
+
+  const s = ymd(d);
+  const { data: row } = await sb
+    .from('daily_data')
+    .select('data')
+    .eq('user_id', user.id)
+    .eq('ymd', s)
+    .maybeSingle();
+
+  // 1) чистим локальные ключи за эту дату
+  clearDailyFor(d);
+
+  // 2) если облако что-то вернуло — применяем
+  if (row?.data) applyData(row.data);
+
+  render();
+}
+
 }
 let tmr; function scheduleSave(){ clearTimeout(tmr); tmr=setTimeout(syncSave,700); }
 document.getElementById('saveBtn').onclick=syncSave;
