@@ -15,21 +15,15 @@
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     (async () => {
-      try {
-        // Обмениваем код на сессию (поддерживает ?code=…)
-        await sb.auth.exchangeCodeForSession(window.location.href);
-      } catch (e) {
-        // Пытаемся альтернативный вариант (если провайдер пришлёт токены во фрагменте)
+      try { await sb.auth.exchangeCodeForSession(window.location.href); }
+      catch (e) {
         try {
-          const url = new URL(window.location.href);
-          const access_token  = url.searchParams.get('access_token') || url.hash.match(/access_token=([^&]+)/)?.[1];
-          const refresh_token = url.searchParams.get('refresh_token')|| url.hash.match(/refresh_token=([^&]+)/)?.[1];
-          if (access_token && refresh_token) {
-            await sb.auth.setSession({ access_token, refresh_token });
-          }
+          const u = new URL(window.location.href);
+          const at = u.searchParams.get('access_token') || u.hash.match(/access_token=([^&]+)/)?.[1];
+          const rt = u.searchParams.get('refresh_token')|| u.hash.match(/refresh_token=([^&]+)/)?.[1];
+          if (at && rt) await sb.auth.setSession({ access_token:at, refresh_token:rt });
         } catch {}
       }
-      // Куда возвращаться
       const fallback = (location.origin + location.pathname).replace(/[^/]+$/,'') + 'index.html';
       const returnTo = localStorage.getItem('returnTo') || fallback;
       localStorage.removeItem('returnTo');
