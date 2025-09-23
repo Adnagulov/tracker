@@ -4,491 +4,269 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Графики — Личный трекер</title>
-
   <style>
     :root{
       --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb;
-      --accent:#22c55e; --accent2:#3b82f6; --warn:#f59e0b; --danger:#ef4444; --border:#1f2937;
-      --chip-bg:#0b1222;
+      --accent:#22c55e; --accent2:#3b82f6; --border:#1f2937;
     }
     [data-theme="light"]{
       --bg:#f7fafc; --card:#ffffff; --muted:#4b5563; --text:#0f172a;
-      --accent:#16a34a; --accent2:#2563eb; --warn:#d97706; --danger:#dc2626; --border:#e5e7eb;
-      --chip-bg:#eef2ff;
+      --accent:#16a34a; --accent2:#2563eb; --border:#e5e7eb;
     }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Inter,Arial,sans-serif}
-    header{border-bottom:1px solid var(--border)}
+    header{position:relative;background:var(--bg);border-bottom:1px solid var(--border)}
     .wrap{max-width:1024px;margin:0 auto;padding:16px}
-    h1{margin:0 0 8px;font-size:24px}
-    .sub{color:var(--muted);font-size:13px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;margin:12px 0}
+    h1{margin:0;font-size:22px}
+    .sub{color:var(--muted);font-size:13px;margin-top:4px}
     .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .right{margin-left:auto}
-    .btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--chip-bg);color:var(--text)!important;cursor:pointer;font-weight:700}
-    .btn.primary{background:var(--accent2); color:#fff;}
-    .btn.ghost{background:var(--card)}
-    input[type="date"]{padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text)}
-    table{width:100%;border-collapse:collapse}
-    th,td{border-bottom:1px solid var(--border);padding:8px;text-align:left}
-    th{color:var(--muted);font-weight:700}
-    .empty{color:var(--muted);padding:12px}
-    canvas{width:100%;height:300px;max-height:50vh}
-    @media(max-width:560px){ h1{font-size:22px} }
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-weight:600;text-decoration:none}
+    .btn.primary{background:var(--accent2);color:#fff;border-color:transparent}
+    .row{display:grid;grid-template-columns:1fr;gap:18px;margin:18px 0}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px}
+    .title{font-weight:700;margin:0 0 8px}
+    .muted{color:var(--muted)}
+    .range{display:flex;gap:8px;flex-wrap:wrap}
+    .range .btn{padding:8px 10px}
+    canvas{width:100%;height:360px;display:block}
+    .legend{font-size:12px;color:var(--muted)}
+    @media(max-width:560px){
+      canvas{height:280px}
+    }
   </style>
-
-  <!-- Chart.js -->
+  <!-- Chart.js (из CDN) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-  <!-- Supabase SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <script>
-    // унаследуем тему с главной
-    (function(){
-      const theme = localStorage.getItem('theme') || 'dark';
-      document.documentElement.setAttribute('data-theme', theme);
-    })();
-  </script>
 </head>
 <body>
   <header>
-    <div class="wrap flex" style="justify-content:space-between;align-items:flex-start">
+    <div class="wrap flex" style="justify-content:space-between">
       <div>
-        <h1>📈 Графики</h1>
-        <div class="sub" id="whoami">—</div>
+        <h1>Графики</h1>
+        <div class="sub">Вес и замеры. Диапазон можно менять.</div>
       </div>
       <div class="flex">
-        <a class="btn ghost" href="./index.html">← Назад</a>
+        <a class="btn" href="./index.html">← Назад</a>
+        <button id="themeBtn" class="btn">🌙/☀️</button>
       </div>
     </div>
   </header>
 
   <main class="wrap">
-    <section class="card">
-      <div class="flex" style="justify-content:space-between">
-        <div class="flex">
-          <label class="sub">С даты</label>
-          <input type="date" id="fromDate">
-          <label class="sub">по</label>
-          <input type="date" id="toDate">
-          <button class="btn" id="resetRange">Сбросить</button>
-        </div>
-        <div class="flex right">
-          <button class="btn" id="exportCsvBtn">Экспорт CSV</button>
+    <div class="card">
+      <div class="flex" style="justify-content:space-between;align-items:center">
+        <h3 class="title">Диапазон</h3>
+        <div class="range">
+          <button class="btn" data-range="30">30 дней</button>
+          <button class="btn" data-range="90">90 дней</button>
+          <button class="btn" data-range="180">180 дней</button>
+          <button class="btn primary" data-range="all">Всё</button>
         </div>
       </div>
-    </section>
+    </div>
 
-    <section class="card">
-      <h3 style="margin-top:0">Вес (кг)</h3>
-      <canvas id="weightChart"></canvas>
-      <div class="sub" id="weightStats" style="margin-top:8px">—</div>
-    </section>
-
-    <section class="card">
-      <h3 style="margin-top:0">Объем живота (см)</h3>
-      <canvas id="waistChart"></canvas>
-      <div class="sub" id="waistStats" style="margin-top:8px">—</div>
-    </section>
-
-    <section class="card">
-      <h3 style="margin-top:0">Объем бицепса (см)</h3>
-      <canvas id="bicepsChart"></canvas>
-      <div class="sub" id="bicepsStats" style="margin-top:8px">—</div>
-    </section>
-
-    <section class="card">
-      <h3 style="margin-top:0">Объем квадрицепса (см)</h3>
-      <canvas id="quadChart"></canvas>
-      <div class="sub" id="quadStats" style="margin-top:8px">—</div>
-    </section>
-
-    <section class="card">
-      <h3 style="margin-top:0">Таблица значений</h3>
-      <div id="tableBox" class="empty">Данных пока нет. Открой <b>Личный трекер</b> и начни вводить вес/обмеры.</div>
+    <section class="row">
+      <div class="card">
+        <h3 class="title">Вес (кг)</h3>
+        <canvas id="chartWeight"></canvas>
+        <div class="legend muted">Факт — линия 1; Целевой — пунктирная линия 2.</div>
+      </div>
+      <div class="card">
+        <h3 class="title">Объём живота (см)</h3>
+        <canvas id="chartWaist"></canvas>
+      </div>
+      <div class="card">
+        <h3 class="title">Объём бицепса (см)</h3>
+        <canvas id="chartBiceps"></canvas>
+      </div>
+      <div class="card">
+        <h3 class="title">Объём квадрицепса (см)</h3>
+        <canvas id="chartQuad"></canvas>
+      </div>
     </section>
   </main>
 
   <script>
-    // === Supabase ===
-    const SUPABASE_URL = "https://afxbyrypaqnobaalipjm.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_vROzTIfTCdtiea3xfMCcHA_bthD-zZr";
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // ===== Тема =====
+    const root = document.documentElement;
+    const applyTheme = (t)=>{ root.setAttribute('data-theme', t); localStorage.setItem('theme', t); };
+    applyTheme(localStorage.getItem('theme')||'dark');
+    document.getElementById('themeBtn').onclick=()=> applyTheme(root.getAttribute('data-theme')==='dark'?'light':'dark');
 
-    const whoamiEl = document.getElementById('whoami');
-    const fromDateEl = document.getElementById('fromDate');
-    const toDateEl   = document.getElementById('toDate');
-    const resetRangeBtn = document.getElementById('resetRange');
-    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    // ===== Утилиты дат =====
+    const pad=(n)=> String(n).padStart(2,'0');
+    const toDate=(s)=> new Date(s);
+    const fmt=(d)=> `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const addDays=(d,n)=>{ const x=new Date(d); x.setDate(x.getDate()+n); return x; };
 
-    const weightCtx = document.getElementById('weightChart').getContext('2d');
-    const waistCtx  = document.getElementById('waistChart').getContext('2d');
-    const bicepsCtx = document.getElementById('bicepsChart').getContext('2d');
-    const quadCtx   = document.getElementById('quadChart').getContext('2d');
-
-    let ALL_ROWS = []; // [{ymd, weight, waist, biceps, quad}]
-    let filtered = [];
-    let weightChart, waistChart, bicepsChart, quadChart;
-
-    // Целевой план по весу (дата -> кг)
-    const TARGET_WEIGHT_RAW = [
-      ['2025-09-17','97'],
-      ['2025-09-23','95,9'],
-      ['2025-09-30','94,7'],
-      ['2025-10-07','93,6'],
-      ['2025-10-14','92,5'],
-      ['2025-10-21','91,3'],
-      ['2025-10-28','90,2'],
-      ['2025-11-04','89,1'],
-      ['2025-11-11','87,9'],
-      ['2025-11-18','86,8'],
-      ['2025-11-25','85,7'],
-      ['2025-12-02','84,5'],
-      ['2025-12-09','83,4'],
-      ['2025-12-16','82,3'],
-      ['2025-12-23','81,1'],
-      ['2025-12-30','80']
-    ];
-    const TARGET_POINTS = TARGET_WEIGHT_RAW
-      .map(([d,v])=>({ d, v:Number(String(v).replace(',','.')) }))
-      .sort((a,b)=>a.d.localeCompare(b.d));
-
-    // Корректный redirect для ссылок входа (GitHub Pages/относит. путь)
-    const REDIRECT_URL = (() => {
-      const u = new URL(window.location.href);
-      let p = u.pathname;
-      if (p.endsWith('.html')) p = p.slice(0, p.lastIndexOf('/')+1);
-      if (!p.endsWith('/')) p += '/';
-      return `${u.origin}${p}`;
-    })();
-
-    // ====== AUTH ======
-    async function ensureAuthAndLoad(){
-      try { await sb.auth.exchangeCodeForSession(window.location.href); } catch(_) {}
-      if (/[?#].*(access_token|refresh_token|code)=/i.test(location.href)) {
-        history.replaceState({}, document.title, REDIRECT_URL.replace(/\/$/,'') + '/charts.html');
+    // ===== Чтение временных рядов из localStorage =====
+    function readMetricSeries(prefix){ // prefix: 'weight'/'waist'/'biceps'/'quad'
+      const rows=[];
+      for(let i=0;i<localStorage.length;i++){
+        const k=localStorage.key(i);
+        if(!k || !k.startsWith('metric:')) continue;
+        // metric:YYYY-MM-DD:weight
+        const parts=k.split(':');
+        if(parts.length!==3) continue;
+        const date=parts[1], name=parts[2];
+        if(name!==prefix) continue;
+        const v = localStorage.getItem(k);
+        if(v!==null && v!=='') rows.push({x: date, y: Number(v)});
       }
-
-      const { data:{ session } } = await sb.auth.getSession();
-      const user = session?.user;
-
-      whoamiEl.textContent = user ? ('• ' + (user.email || user.id)) : 'Не выполнен вход. Открой главную и войди по ссылке из email.';
-      if (!user) return;
-
-      await loadAllDaily(user.id);
-      initDateRange();
-      applyFilterAndRender();
+      rows.sort((a,b)=> a.x.localeCompare(b.x));
+      return rows;
     }
 
-    // ====== LOAD ======
-    async function loadAllDaily(userId){
-      ALL_ROWS = [];
-      const { data, error } = await sb.from('daily_data')
-        .select('ymd,data')
-        .eq('user_id', userId)
-        .order('ymd', { ascending: true });
+    // ===== Целевой план по весу (из твоей таблицы) =====
+    const targetPlan = [
+      ['2025-09-17', 97.0],
+      ['2025-09-23', 95.9],
+      ['2025-09-30', 94.7],
+      ['2025-10-07', 93.6],
+      ['2025-10-14', 92.5],
+      ['2025-10-21', 91.3],
+      ['2025-10-28', 90.2],
+      ['2025-11-04', 89.1],
+      ['2025-11-11', 87.9],
+      ['2025-11-18', 86.8],
+      ['2025-11-25', 85.7],
+      ['2025-12-02', 84.5],
+      ['2025-12-09', 83.4],
+      ['2025-12-16', 82.3],
+      ['2025-12-23', 81.1],
+      ['2025-12-30', 80.0],
+    ].map(([d,v])=>({x:d,y:v}));
 
-      if (error) {
-        console.warn('loadAllDaily error', error);
-        return;
-      }
-      for (const row of (data || [])) {
-        const y = row.ymd;
-        const map = row.data || {};
-        const w = map[`metric:${y}:weight`];
-        const waist  = map[`metric:${y}:waist`];
-        const biceps = map[`metric:${y}:biceps`];
-        const quad   = map[`metric:${y}:quad`];
-
-        const weight = (w==null || w==='' || isNaN(Number(w))) ? null : Number(w);
-        const waistN  = (waist==null  || waist===''  || isNaN(Number(waist)))  ? null : Number(waist);
-        const bicepsN = (biceps==null || biceps==='' || isNaN(Number(biceps))) ? null : Number(biceps);
-        const quadN   = (quad==null   || quad===''   || isNaN(Number(quad)))   ? null : Number(quad);
-
-        if (weight!=null || waistN!=null || bicepsN!=null || quadN!=null) {
-          ALL_ROWS.push({ ymd: y, weight, waist: waistN, biceps: bicepsN, quad: quadN });
-        }
-      }
-    }
-
-    // ====== DATE RANGE / FILTER ======
-    function initDateRange(){
-      if (!ALL_ROWS.length) return;
-      fromDateEl.value = ALL_ROWS[0].ymd;
-      toDateEl.value   = ALL_ROWS[ALL_ROWS.length-1].ymd;
-      fromDateEl.max   = toDateEl.value;
-      toDateEl.min     = fromDateEl.value;
-    }
-
-    function applyFilterAndRender(){
-      if (!ALL_ROWS.length){
-        renderEmpty();
-        return;
-      }
-      const from = fromDateEl.value || ALL_ROWS[0].ymd;
-      const to   = toDateEl.value   || ALL_ROWS[ALL_ROWS.length-1].ymd;
-
-      const f = from <= to ? from : to;
-      const t = to >= from ? to : from;
-      if (fromDateEl.value !== f) fromDateEl.value = f;
-      if (toDateEl.value   !== t) toDateEl.value   = t;
-
-      filtered = ALL_ROWS.filter(r => r.ymd >= f && r.ymd <= t);
-      renderCharts();
-      renderTable();
-    }
-
-    function renderEmpty(){
-      [weightChart,waistChart,bicepsChart,quadChart].forEach(ch=>{ if(ch){ ch.destroy(); }});
-      document.getElementById('weightStats').textContent = '—';
-      document.getElementById('waistStats').textContent  = '—';
-      document.getElementById('bicepsStats').textContent = '—';
-      document.getElementById('quadStats').textContent   = '—';
-      document.getElementById('tableBox').innerHTML = '<div class="empty">Данных пока нет. Открой <b>Личный трекер</b> и начни вводить вес/обмеры.</div>';
-    }
-
-    // ====== HELPERS ======
-    function getTextColor(){
-      return getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#94a3b8';
-    }
-    function getGridColor(){
-      const c = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
-      return c || '#1f2937';
-    }
-    function statsLine(values, unit){
-      const vals = values.filter(v => v!=null);
-      if (!vals.length) return '—';
-      const min = Math.min(...vals), max = Math.max(...vals), last = vals[vals.length-1];
-      return `последнее: ${last} ${unit} • мин: ${min} • макс: ${max}`;
-    }
-    // дни между ISO датами
-    function daysBetween(d1, d2){
-      const t1 = new Date(d1+"T00:00:00Z").getTime();
-      const t2 = new Date(d2+"T00:00:00Z").getTime();
-      return Math.round((t2 - t1)/86400000);
-    }
-    // линейная интерполяция цели по датам labels
-    function buildInterpolatedTarget(labels){
-      if (!TARGET_POINTS.length) return labels.map(()=>null);
-      const arr = labels.map(()=>null);
-      // найдём ближайшие контрольные точки для каждого дня
-      for (let i=0;i<labels.length;i++){
-        const d = labels[i];
-        // если точка цели ровно на эту дату — просто ставим её
-        const exact = TARGET_POINTS.find(p=>p.d===d);
-        if (exact){ arr[i] = exact.v; continue; }
-        // найдём левую и правую опорные точки
-        let left = null, right = null;
-        for (const p of TARGET_POINTS){
-          if (p.d < d) left = p; else { right = p; break; }
-        }
-        if (!left || !right) { // вне диапазона цели — не показываем
-          arr[i] = null; 
-          continue;
-        }
-        const total = daysBetween(left.d, right.d);
-        const offset = daysBetween(left.d, d);
-        const k = offset / total;
-        arr[i] = left.v + (right.v - left.v) * k; // линейная интерполяция
-      }
-      return arr;
-    }
-
-    // ====== RENDER CHARTS ======
-    function renderCharts(){
-      const labels = filtered.map(r => r.ymd);
-
-      // вес (факт)
-      const weights = filtered.map(r => r.weight);
-      // цель (интерполированная под каждую метку)
-      const targetInterp = buildInterpolatedTarget(labels);
-
-      // подкраска точек факта относительно цели
-      const pointColors = weights.map((w, idx) => {
-        const tgt = targetInterp[idx];
-        if (w==null || tgt==null) return getTextColor(); // нейтральный цвет если данных нет
-        return w <= tgt ? '#22c55e' : '#ef4444'; // зелёный если выполняешь план
-      });
-
-      const textColor = getTextColor();
-      const gridColor = getGridColor();
-
-      // WEIGHT
-      if (weightChart) weightChart.destroy();
-      weightChart = new Chart(weightCtx, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: 'Факт',
-              data: weights,
-              spanGaps: true,
-              pointRadius: 3,
-              pointBackgroundColor: pointColors,
-              pointBorderColor: pointColors
-            },
-            {
-              label: 'Цель',
-              data: targetInterp,
-              spanGaps: true,
-              borderDash: [6,4],
-              pointRadius: 0
-            }
-          ]
+    // ===== Построение графиков (Chart.js) =====
+    let charts = {};
+    const commonOpts = (title)=>({
+      type:'line',
+      data:{datasets:[]},
+      options:{
+        responsive:true,
+        interaction:{mode:'nearest', intersect:false},
+        plugins:{
+          legend:{labels:{color:getComputedStyle(root).getPropertyValue('--text')}},
+          title:{display:false, text:title, color:getComputedStyle(root).getPropertyValue('--text')}
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { 
-            legend: { labels: { color: textColor } },
-            tooltip: {
-              callbacks: {
-                afterBody: (items) => {
-                  // покажем ∆ относительно цели
-                  const idx = items[0].dataIndex;
-                  const w = weights[idx], t = targetInterp[idx];
-                  if (w==null || t==null) return '';
-                  const delta = (w - t).toFixed(1);
-                  const sign = delta>0 ? '+' : '';
-                  return `Δ к цели: ${sign}${delta} кг`;
-                }
-              }
-            }
-          },
-          scales: {
-            x: { ticks: { color: textColor }, grid: { color: gridColor } },
-            y: { ticks: { color: textColor }, grid: { color: gridColor } }
-          }
-        }
-      });
-
-      // Итог по плану: сколько дней ≤ цели
-      let planOk = 0, planTotal = 0;
-      for (let i=0;i<labels.length;i++){
-        if (weights[i]!=null && targetInterp[i]!=null){ planTotal++; if (weights[i] <= targetInterp[i]) planOk++; }
+        scales:{
+          x:{type:'time', time:{unit:'day', tooltipFormat:'yyyy-MM-dd'}, ticks:{color:getComputedStyle(root).getPropertyValue('--muted')}, grid:{color:getComputedStyle(root).getPropertyValue('--border')}},
+          y:{ticks:{color:getComputedStyle(root).getPropertyValue('--muted')}, grid:{color:getComputedStyle(root).getPropertyValue('--border')}}
+        },
+        elements:{point:{radius:3}}
       }
-      const wVals = weights.filter(v => v!=null);
-      const wMin = wVals.length ? Math.min(...wVals) : null;
-      const wMax = wVals.length ? Math.max(...wVals) : null;
-      const wLast= wVals.length ? wVals[wVals.length-1] : null;
-      document.getElementById('weightStats').textContent =
-        (wVals.length ? `последнее: ${wLast} кг • мин: ${wMin} • макс: ${wMax}` : '—') +
-        (planTotal ? ` • дней по плану: ${planOk}/${planTotal}` : '');
+    });
 
-      // WAIST
-      const waists = filtered.map(r => r.waist);
-      if (waistChart) waistChart.destroy();
-      waistChart = new Chart(waistCtx, {
-        type: 'line',
-        data: { labels, datasets: [{ label: 'Живот', data: waists, spanGaps: true }] },
-        options: {
-          responsive:true, maintainAspectRatio:false,
-          plugins:{ legend:{ display:false } },
-          scales:{ x:{ ticks:{ color:textColor }, grid:{ color:gridColor } }, y:{ ticks:{ color:textColor }, grid:{ color:gridColor } } }
-        }
-      });
-      document.getElementById('waistStats').textContent = statsLine(waists, 'см');
+    // Регистрация адаптера для времени (достаточно dayjs-lite встроенного в chart.js 4)
+    // Chart.js 4 уже имеет встроенный adapter "date-fns". Для совместимости добавим простой парсер:
+    // Но chart.js 4.4.1 без дополнительного адаптера понимает ISO-строки через built-in adapter.
 
-      // BICEPS
-      const biceps = filtered.map(r => r.biceps);
-      if (bicepsChart) bicepsChart.destroy();
-      bicepsChart = new Chart(bicepsCtx, {
-        type: 'line',
-        data: { labels, datasets: [{ label: 'Бицепс', data: biceps, spanGaps: true }] },
-        options: {
-          responsive:true, maintainAspectRatio:false,
-          plugins:{ legend:{ display:false } },
-          scales:{ x:{ ticks:{ color:textColor }, grid:{ color:gridColor } }, y:{ ticks:{ color:textColor }, grid:{ color:gridColor } } }
-        }
-      });
-      document.getElementById('bicepsStats').textContent = statsLine(biceps, 'см');
-
-      // QUAD
-      const quads = filtered.map(r => r.quad);
-      if (quadChart) quadChart.destroy();
-      quadChart = new Chart(quadCtx, {
-        type: 'line',
-        data: { labels, datasets: [{ label: 'Квадрицепс', data: quads, spanGaps: true }] },
-        options: {
-          responsive:true, maintainAspectRatio:false,
-          plugins:{ legend:{ display:false } },
-          scales:{ x:{ ticks:{ color:textColor }, grid:{ color:gridColor } }, y:{ ticks:{ color:textColor }, grid:{ color:gridColor } } }
-        }
-      });
-      document.getElementById('quadStats').textContent = statsLine(quads, 'см');
+    function makeChart(ctxId, title){
+      const ctx=document.getElementById(ctxId).getContext('2d');
+      return new Chart(ctx, commonOpts(title));
     }
 
-    // ====== TABLE ======
-    function renderTable(){
-      const box = document.getElementById('tableBox');
-      if (!filtered.length){
-        box.innerHTML = '<div class="empty">За выбранный диапазон нет данных.</div>';
-        return;
+    function setThemeColors(){
+      // Обновить цвета осей/легенды при смене темы
+      const text=getComputedStyle(root).getPropertyValue('--text');
+      const muted=getComputedStyle(root).getPropertyValue('--muted');
+      const grid=getComputedStyle(root).getPropertyValue('--border');
+      Object.values(charts).forEach(ch=>{
+        ch.options.plugins.legend.labels.color=text;
+        ch.options.scales.x.ticks.color=muted;
+        ch.options.scales.y.ticks.color=muted;
+        ch.options.scales.x.grid.color=grid;
+        ch.options.scales.y.grid.color=grid;
+        ch.update('none');
+      });
+    }
+
+    // Создаём графики
+    charts.weight = makeChart('chartWeight','Вес');
+    charts.waist  = makeChart('chartWaist','Живот');
+    charts.biceps = makeChart('chartBiceps','Бицепс');
+    charts.quad   = makeChart('chartQuad','Квадрицепс');
+
+    // Цвета наборов
+    function ds(colorIndex, label, data, dotted=false){
+      const palette = [
+        '#3b82f6', // синий
+        '#22c55e', // зелёный
+        '#f59e0b', // жёлтый
+        '#ef4444', // красный
+        '#a855f7', // фиолет
+      ];
+      const c = palette[colorIndex % palette.length];
+      return {
+        label, data,
+        borderColor: c, backgroundColor: c+'33',
+        tension: 0.25,
+        borderWidth: 2,
+        pointRadius: 2.5,
+        spanGaps: true,
+        borderDash: dotted ? [6,6] : undefined,
+        fill: false
+      };
+    }
+
+    // Фильтр по диапазону дат
+    function filterByRange(rows, range){
+      if(range==='all' || rows.length===0) return rows;
+      const to = rows[rows.length-1].x;
+      const toDate = new Date(to);
+      const fromDate = addDays(toDate, -Number(range));
+      return rows.filter(r => new Date(r.x) >= fromDate);
+    }
+
+    function refresh(range='all'){
+      // Фактические ряды
+      const weight = filterByRange(readMetricSeries('weight'), range);
+      const waist  = filterByRange(readMetricSeries('waist'),  range);
+      const biceps = filterByRange(readMetricSeries('biceps'), range);
+      const quad   = filterByRange(readMetricSeries('quad'),   range);
+
+      // Целевой план веса — не фильтруем жёстко; но можно ограничить тем же диапазоном, если есть факт
+      let target = targetPlan;
+      if(weight.length && range!=='all'){
+        const to   = new Date(weight[weight.length-1].x);
+        const from = addDays(to, -Number(range));
+        target = targetPlan.filter(p => new Date(p.x) >= from && new Date(p.x) <= to);
+        if(!target.length) target = targetPlan; // fallback
       }
-      const rows = filtered.map(r => {
-        const w = (r.weight==null || Number.isNaN(r.weight)) ? '' : r.weight;
-        const wa = (r.waist==null  || Number.isNaN(r.waist))  ? '' : r.waist;
-        const bi = (r.biceps==null || Number.isNaN(r.biceps)) ? '' : r.biceps;
-        const qu = (r.quad==null   || Number.isNaN(r.quad))   ? '' : r.quad;
-        return `<tr><td>${r.ymd}</td><td>${w}</td><td>${wa}</td><td>${bi}</td><td>${qu}</td></tr>`;
-      }).join('');
-      box.innerHTML = `
-        <div style="overflow:auto">
-          <table>
-            <thead><tr><th>Дата</th><th>Вес (кг)</th><th>Живот (см)</th><th>Бицепс (см)</th><th>Квадрицепс (см)</th></tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>`;
+
+      // Обновить наборы
+      charts.weight.data.datasets = [
+        ds(0,'Факт', weight),
+        ds(3,'Целевой', target, true)
+      ];
+      charts.waist.data.datasets  = [ ds(1,'Живот', waist) ];
+      charts.biceps.data.datasets = [ ds(2,'Бицепс', biceps) ];
+      charts.quad.data.datasets   = [ ds(4,'Квадрицепс', quad) ];
+
+      Object.values(charts).forEach(ch=> ch.update());
+      setThemeColors();
     }
 
-    // ====== CSV ======
-    function toCsv(arr){
-      const header = ['date','weight','waist','biceps','quad'];
-      const lines = [header.join(',')];
-      arr.forEach(r=>{
-        lines.push([
-          r.ymd,
-          r.weight ?? '',
-          r.waist ?? '',
-          r.biceps ?? '',
-          r.quad ?? ''
-        ].join(','));
+    // Кнопки диапазона
+    document.querySelectorAll('.range .btn').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        document.querySelectorAll('.range .btn').forEach(x=>x.classList.remove('primary'));
+        b.classList.add('primary');
+        refresh(b.dataset.range);
       });
-      return lines.join('\n');
-    }
-    function downloadCsv(name, text){
-      const blob = new Blob([text], {type:'text/csv;charset=utf-8;'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = name; a.click();
-      setTimeout(()=>URL.revokeObjectURL(url), 1000);
-    }
-
-    // ====== EVENTS ======
-    fromDateEl.addEventListener('change', ()=>{
-      if (toDateEl.value && fromDateEl.value > toDateEl.value) toDateEl.value = fromDateEl.value;
-      applyFilterAndRender();
-    });
-    toDateEl.addEventListener('change', ()=>{
-      if (fromDateEl.value && toDateEl.value < fromDateEl.value) fromDateEl.value = toDateEl.value;
-      applyFilterAndRender();
-    });
-    resetRangeBtn.addEventListener('click', ()=>{
-      if (!ALL_ROWS.length) return;
-      fromDateEl.value = ALL_ROWS[0].ymd;
-      toDateEl.value   = ALL_ROWS[ALL_ROWS.length-1].ymd;
-      applyFilterAndRender();
-    });
-    exportCsvBtn.addEventListener('click', ()=>{
-      const csv = toCsv(filtered.length ? filtered : ALL_ROWS);
-      const name = `tracker_metrics_${(new Date()).toISOString().slice(0,10)}.csv`;
-      downloadCsv(name, csv);
     });
 
-    // ====== BOOT ======
-    ensureAuthAndLoad();
+    // Начальный прогон
+    refresh('all');
+
+    // Реакция на смену темы (из кнопки)
+    const orig = document.getElementById('themeBtn').onclick;
+    document.getElementById('themeBtn').onclick = ()=>{
+      orig();
+      setTimeout(setThemeColors, 0);
+    };
+
+    // Наблюдать за localStorage (если вкладка index.html что-то изменила)
+    window.addEventListener('storage', ()=> refresh(document.querySelector('.range .btn.primary')?.dataset.range || 'all'));
   </script>
 </body>
 </html>
