@@ -7,23 +7,18 @@
   <style>
     :root{
       --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb;
-      --accent:#22c55e; --accent2:#3b82f6; --warn:#f59e0b; --danger:#ef4444; --border:#1f2937;
-      --chip-bg:#0b1222;
+      --accent:#22c55e; --accent2:#3b82f6; --warn:#f59e0b; --danger:#ef4444; --border:#1f2937; --chip-bg:#0b1222;
     }
     [data-theme="light"]{
       --bg:#f7fafc; --card:#ffffff; --muted:#4b5563; --text:#0f172a;
-      --accent:#16a34a; --accent2:#2563eb; --warn:#d97706; --danger:#dc2626; --border:#e5e7eb;
-      --chip-bg:#eef2ff;
+      --accent:#16a34a; --accent2:#2563eb; --warn:#d97706; --danger:#dc2626; --border:#e5e7eb; --chip-bg:#eef2ff;
     }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Inter,Arial,sans-serif}
 
-    /* Шапка обычная (НЕ фиксированная) */
-    header{
-      position:relative; top:auto; background:var(--bg);
-      border-bottom:1px solid var(--border); backdrop-filter:none; z-index:auto;
-    }
-    [data-theme="light"] header{ background:var(--bg); }
+    /* обычная статичная шапка */
+    header{position:relative;top:auto;background:var(--bg);border-bottom:1px solid var(--border)}
+    [data-theme="light"] header{background:var(--bg)}
 
     .wrap{max-width:1024px;margin:0 auto;padding:16px}
     h1{margin:0 0 4px;font-size:24px}
@@ -41,21 +36,19 @@
     input[type="checkbox"]{width:28px;height:28px}
     input[type="number"], input[type="time"], input[type="email"], input[type="text"]{
       font-size:16px;padding:8px 10px;border:1px solid var(--border);
-      border-radius:10px;background:transparent;color:var(--text);width:100%;max-width:140px
+      border-radius:10px;background:transparent;color:var(--text);width:100%;max-width:160px
     }
     .muted{color:var(--muted)}
-
-    /* Эмодзи в одну строку */
     .chips{display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}
     .chip{padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:var(--chip-bg);color:var(--text);cursor:pointer;font-size:18px}
-    .chip.active{outline:2px solid var(--accent2);}
+    .chip.active{outline:2px solid var(--accent2)}
     .stateRow{margin:10px 0}
     .stateTitle{font-size:14px;color:var(--muted);margin-bottom:6px}
 
     .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);padding:6px 10px;border-radius:999px;background:#0b1024;font-size:12px}
     [data-theme="light"] .pill{background:#f1f5f9}
     .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:var(--chip-bg);color:var(--text)!important;cursor:pointer;font-weight:700}
+    .btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;border:1px solid var(--border);background:var(--chip-bg);color:var(--text)!important;cursor:pointer;font-weight:700}
     .btn.primary{background:var(--accent2); color:#fff;}
     .btn.warn{background:var(--warn); color:#000;}
     .btn.ghost{background:var(--card)}
@@ -76,15 +69,12 @@
       .grid{grid-template-columns:88px 1fr 36px; gap:6px}
       .tab{min-width:100px; padding:10px 10px; font-size:13px}
       .btn{padding:10px 12px}
-      input[type="number"], input[type="time"], input[type="email"], input[type="text"]{max-width:110px}
-      .kpi{grid-template-columns:1fr 1fr}
     }
   </style>
 
-  <!-- Supabase SDK -->
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    /* !!! ЗАМЕНИ при необходимости на свои значения !!! */
     const SUPABASE_URL = "https://afxbyrypaqnobaalipjm.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_vROzTIfTCdtiea3xfMCcHA_bthD-zZr";
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -98,8 +88,7 @@
           <h1>📅 Личный трекер</h1>
           <div class="sub" id="dateLine">—</div>
           <div class="flex" style="margin-top:10px">
-            <!-- кликабельная ссылка на workout.html -->
-            <a class="pill" id="sportPill" href="#" style="text-decoration:none">Спорт дня: —</a>
+            <a class="pill" id="sportPill" href="./workout.html">Спорт дня: —</a>
             <span class="pill" id="sleepPill">Сон: 22:30 → 06:00 (≈7–8 ч)</span>
             <span class="pill">Цель веса: 80 кг</span>
           </div>
@@ -136,8 +125,8 @@
     <section class="kpi">
       <div class="card"><div class="muted small">Выполнено сегодня</div><div class="big" id="doneToday">0%</div><progress id="progToday" max="100" value="0"></progress></div>
       <div class="card"><div class="muted small">Недельный прогресс</div><div class="big" id="doneWeek">0%</div><progress id="progWeek" max="100" value="0"></progress></div>
-      <div class="card"><div class="muted small">Книга / месяц</div><div class="big" id="bookPages">20 стр/день</div><div class="small muted">Читай 20–30 мин ежедневно</div></div>
-      <div class="card"><div class="muted small">Английский</div><div class="big" id="engDaily">Duolingo 15–30 мин</div><div class="small muted">Подкаст в дороге</div></div>
+      <div class="card"><div class="muted small">Книга / месяц</div><div class="big">20 стр/день</div><div class="small muted">Читай 20–30 мин ежедневно</div></div>
+      <div class="card"><div class="muted small">Английский</div><div class="big">Duolingo 15–30 мин</div><div class="small muted">Подкаст в дороге</div></div>
     </section>
 
     <section class="card">
@@ -150,8 +139,8 @@
       <div class="grid" id="nutritionMeals"></div>
       <div class="grid" id="nutritionTotals"></div>
       <div class="small muted" style="margin-top:8px">
-        План на день: Калории ~<b>1950</b>, Белки <b>210</b> г, Жиры <b>55</b> г, Углеводы <b>150</b> г.<br>
-        Цвет итога по калориям: &gt;2000 — <b style="color:#ef4444">красный</b>, &lt;1500 — <b style="color:#2563eb">синий</b>.
+        План на день: калории ≈ <b>1950</b>, Б <b>210</b> г, Ж <b>55</b> г, У <b>150</b> г.<br>
+        Цвет итога по калориям: >2000 — <b style="color:#ef4444">красный</b>, <1500 — <b style="color:#2563eb">синий</b>.
       </div>
     </section>
 
@@ -163,22 +152,23 @@
     <section class="card" id="weeklySection">
       <h3 style="margin-top:0">Итоги недели</h3>
       <div class="grid" id="weeklyGoals"></div>
-      <div class="small muted" style="margin-top:8px">Неделя считается по ISO (пн–вс). «Сброс дня» чистит текущий день (расписание, цели, питание и замеры).</div>
+      <div class="small muted" style="margin-top:8px">Неделя ISO (пн–вс). «Сброс дня» чистит текущий день (расписание, цели, питание, замеры).</div>
     </section>
 
     <section class="card">
       <h3 style="margin-top:0">Состояние за день</h3>
       <div id="stateGrid"></div>
-      <div class="small muted">Выбери по шкале от 1 до 5: 1 — плохо, 5 — отлично.</div>
+      <div class="small muted">Шкала 1–5: 1 — плохо, 5 — отлично.</div>
     </section>
 
     <section class="card">
       <h3 style="margin-top:0">Здоровье (утро)</h3>
       <div class="grid" id="healthGrid"></div>
+      <div class="small muted" id="circHint" style="display:none">Замеры показываются только по воскресеньям.</div>
     </section>
   </main>
 
-  <!-- Настройки -->
+  <!-- Модал настроек -->
   <div class="settings" id="settings" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:16px">
     <div class="box" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;max-width:420px;width:100%">
       <h3 style="margin:0 0 8px">Настройки</h3>
@@ -194,30 +184,31 @@
   </div>
 
   <script>
-  /* ====== Дата/утилы ====== */
+  /* ====== Дата / утилы ====== */
   const DAYS_FULL = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
   const pad=(n)=> String(n).padStart(2,'0');
   const ymd=(d)=> `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-  function isoWeek(d){ const t = new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-day+3); const first=new Date(Date.UTC(t.getUTCFullYear(),0,4)); const w=1+Math.round(((t-first)/86400000-3+((first.getUTCDay()+6)%7))/7); return `${t.getUTCFullYear()}-W${pad(w)}`;}
-  const today = new Date();
+  function isoWeek(d){ const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-day+3); const first=new Date(Date.UTC(t.getUTCFullYear(),0,4)); const w=1+Math.round(((t-first)/86400000-3+((first.getUTCDay()+6)%7))/7); return `${t.getUTCFullYear()}-W${pad(w)}`; }
   function startOfISOWeek(d){ const t=new Date(d.getFullYear(),d.getMonth(),d.getDate()); const day=(t.getDay()+6)%7; t.setDate(t.getDate()-day); t.setHours(0,0,0,0); return t;}
   function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x;}
+  const today = new Date();
   let viewWeekStart = startOfISOWeek(today);
-  let currentDay = (today.getDay()+6)%7; // 0=Пн..6=Вс
-  function getViewDate(){ return addDays(viewWeekStart, currentDay); }
+  let currentDay = (today.getDay()+6)%7;
+  const getViewDate = ()=> addDays(viewWeekStart, currentDay);
 
-  /* ====== Тема/настройки ====== */
+  /* ====== Тема / настройки ====== */
   const root=document.documentElement, themeBtn=document.getElementById('themeBtn');
   function applyTheme(t){ root.setAttribute('data-theme', t); localStorage.setItem('theme', t); }
   applyTheme(localStorage.getItem('theme')||'dark');
   themeBtn.onclick=()=> applyTheme(root.getAttribute('data-theme')==='dark'?'light':'dark');
+
   const settings = document.getElementById('settings');
   document.getElementById('settingsBtn').onclick=()=>{ loadTimes(); settings.style.display='flex'; };
   document.getElementById('cancelSettings').onclick=()=> settings.style.display='none';
   document.getElementById('saveSettings').onclick=()=>{ localStorage.setItem('wakeTime', document.getElementById('wakeTime').value); localStorage.setItem('sleepTime', document.getElementById('sleepTime').value); loadTimes(); settings.style.display='none'; scheduleSave(); };
   function loadTimes(){ const w=localStorage.getItem('wakeTime')||'06:00', s=localStorage.getItem('sleepTime')||'22:30'; document.getElementById('wakeTime').value=w; document.getElementById('sleepTime').value=s; document.getElementById('sleepPill').textContent=`Сон: ${s} → ${w} (≈7–8 ч)`; }
 
-  /* ====== Данные/ключи ====== */
+  /* ====== Данные / ключи ====== */
   const baseDay = [
     ['05:30–06:00','Подъём, вода, дыхание, зарядка'],
     ['06:00–07:00','Спорт'],
@@ -234,31 +225,22 @@
     ['22:00–22:30','Вечерний ритуал, душ'],
     ['22:30–06:00','Сон']
   ];
-
-  /* СПОРТ: синхронизировано с workout.html */
-  const sportPlan = {
-    0:'Силовая дома',
-    1:'Бег улица',
-    2:'Силовая улица',
-    3:'Бег улица',
-    4:'Силовая дома',
-    5:'Силовая улица',
-    6:'Футбол'
-  };
+  // согласовано с workout.html
+  const sportPlan = {0:'Силовая дома',1:'Бег улица',2:'Силовая улица',3:'Бег улица',4:'Силовая дома',5:'Силовая улица',6:'Футбол'};
 
   const goalsDaily  = ['7+ часов сна','Duolingo 15–30 мин','Аудио в дороге (утро/вечер)','20+ страниц книги','Питание по плану','Спорт дня выполнен'];
   const goalsWeekly = ['5+ тренировок/активностей','2× силовые','2× футбол','2× бег (интервалы/длинный)','7× Duolingo','7× 20+ страниц книги','План недели составлен'];
 
+  // ключи
   const DAY_KEY  =(d,i)=>`day:${ymd(d)}:${i}`;
   const GOAL_KEY =(d,i)=>`goal:${ymd(d)}:${i}`;
   const WEEK_KEY =(w,i)=>`wgoal:${w}:${i}`;
   const NF_KEY   =(d,m,f)=>`n:${ymd(d)}:${m}:${f}`;
   const STATE_KEY=(d,t)=>`state:${ymd(d)}:${t}`;
   const WEIGHT_KEY=(d)=>`metric:${ymd(d)}:weight`;
-  // Замеры только по воскресеньям:
-  const CIRC_KEY=(d,name)=>`circ:${ymd(d)}:${name}`; // waist|biceps|quad
+  const CIRC_KEY =(d,part)=>`circ:${ymd(d)}:${part}`; // waist|biceps|quad
 
-  /* ====== DOM ====== */
+  /* ====== DOM и рендер ====== */
   const tabs=document.getElementById('dayTabs');
   function renderTabs(){
     tabs.innerHTML='';
@@ -271,21 +253,12 @@
     const vd=getViewDate();
     document.getElementById('dateLine').textContent = `${DAYS_FULL[currentDay]} • ${ymd(vd)}`;
     document.getElementById('weekLabel').textContent = `Неделя ${isoWeek(vd)}`;
+    // ссылка на тренировки с датой
+    document.getElementById('sportPill').href = `./workout.html?date=${ymd(vd)}`;
   }
 
-  const grid=document.getElementById('scheduleGrid'), daily=document.getElementById('dailyGoals'), weekly=document.getElementById('weeklyGoals'), sportPill=document.getElementById('sportPill');
-
-  function bindSportLink(){
-    const a = document.getElementById('sportPill');
-    if(!a) return;
-    a.onclick = (e)=>{
-      e.preventDefault();
-      const vd = getViewDate();
-      const date = `${vd.getFullYear()}-${String(vd.getMonth()+1).padStart(2,'0')}-${String(vd.getDate()).padStart(2,'0')}`;
-      location.href = `./workout.html?date=${date}`;
-    };
-  }
-
+  const grid=document.getElementById('scheduleGrid'), daily=document.getElementById('dailyGoals'),
+        weekly=document.getElementById('weeklyGoals'), sportPill=document.getElementById('sportPill');
   function makeRow(time,label,checked,onchange,key){
     const t=document.createElement('div'); t.className='row';
     const c1=document.createElement('div'); c1.className='time'; c1.textContent=time; t.appendChild(c1);
@@ -293,26 +266,21 @@
     const c3=document.createElement('div'); const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=checked; cb.onchange=()=>onchange(cb.checked); c3.appendChild(cb); t.appendChild(c3);
     cb.setAttribute('data-key',key); return t;
   }
-
   function renderSchedule(){
-    const vd=getViewDate(); grid.innerHTML='';
-    sportPill.textContent=`Спорт дня: ${sportPlan[currentDay]}`;
+    const vd=getViewDate(); grid.innerHTML=''; sportPill.textContent=`Спорт дня: ${sportPlan[currentDay]}`;
     baseDay.forEach((it,i)=>{ const key=DAY_KEY(vd,i); const saved=localStorage.getItem(key)==='1';
       grid.appendChild(makeRow(it[0],it[1],saved,(v)=>{ localStorage.setItem(key,v?'1':'0'); updateProgress(); scheduleSave(); },key)); });
   }
-
   function renderDailyGoals(){
     const vd=getViewDate(); daily.innerHTML='';
     goalsDaily.forEach((lab,i)=>{ const key=GOAL_KEY(vd,i); const saved=localStorage.getItem(key)==='1';
       daily.appendChild(makeRow('—',lab,saved,(v)=>{ localStorage.setItem(key,v?'1':'0'); updateProgress(); scheduleSave(); },key)); });
   }
-
   function renderWeeklyGoals(){
     weekly.innerHTML=''; const w=isoWeek(getViewDate());
     goalsWeekly.forEach((lab,i)=>{ const key=WEEK_KEY(w,i); const saved=localStorage.getItem(key)==='1';
       weekly.appendChild(makeRow('Неделя',lab,saved,(v)=>{ localStorage.setItem(key,v?'1':'0'); updateProgress(); scheduleSave(); },key)); });
   }
-
   function updateProgress(){
     const vd=getViewDate(); const dayTotal=baseDay.length+goalsDaily.length;
     let done=0; for(let i=0;i<baseDay.length;i++) if(localStorage.getItem(DAY_KEY(vd,i))==='1') done++;
@@ -325,7 +293,7 @@
   /* ====== Питание ====== */
   const mealsGrid=document.getElementById('nutritionMeals'), totalsGrid=document.getElementById('nutritionTotals');
   const MEALS=['Завтрак','Обед','Ужин','Перекусы']; const N_FIELDS=['Калории (ккал)','Белки (г)','Жиры (г)','Углеводы (г)'];
-  const TARGETS={'Калории (ккал)':1950,'Белки (г)':210,'Жиры (г)':55,'Углеводы (г)':150};
+  const PLAN={ kcal:1950, p:210, f:55, c:150 };
   const getNum=(k)=>parseInt(localStorage.getItem(k)||0); const setNum=(k,v)=>localStorage.setItem(k,String(v));
   function renderMeals(){
     const vd=getViewDate(); mealsGrid.innerHTML='';
@@ -343,13 +311,25 @@
   function renderTotals(){
     const vd=getViewDate(); totalsGrid.innerHTML=''; const sums={'Калории (ккал)':0,'Белки (г)':0,'Жиры (г)':0,'Углеводы (г)':0};
     MEALS.forEach(m=>N_FIELDS.forEach(f=> sums[f]+=getNum(NF_KEY(vd,m,f))));
-    N_FIELDS.forEach(field=>{
+    // Фактические
+    [['Калории (ккал)',null],['Белки (г)',null],['Жиры (г)',null],['Углеводы (г)',null]].forEach(([field])=>{
       const row=document.createElement('div'); row.className='row';
       const c1=document.createElement('div'); c1.className='time'; c1.textContent=field; row.appendChild(c1);
-      const c2=document.createElement('div'); c2.className='label'; c2.textContent=`${sums[field]} / ${TARGETS[field]}`; 
-      if(field==='Калории (ккал)'){ c2.style.color=(sums[field]>2000)?'#ef4444':(sums[field]<1500?'#2563eb':'inherit'); }
-      row.appendChild(c2);
+      const c2=document.createElement('div'); c2.className='label'; c2.textContent=String(sums[field]); if(field==='Калории (ккал)'){ c2.style.color=(sums[field]>2000)?'#ef4444':(sums[field]<1500?'#2563eb':'inherit'); } row.appendChild(c2);
       row.appendChild(document.createElement('div')); totalsGrid.appendChild(row);
+    });
+    // Плановые
+    const planRows = [
+      ['План (ккал)', PLAN.kcal],
+      ['План (белки г)', PLAN.p],
+      ['План (жиры г)',  PLAN.f],
+      ['План (углеводы г)', PLAN.c],
+    ];
+    planRows.forEach(([name,val])=>{
+      const r=document.createElement('div'); r.className='row';
+      const c1=document.createElement('div'); c1.className='time'; c1.textContent=name; r.appendChild(c1);
+      const c2=document.createElement('div'); c2.className='label'; c2.textContent=String(val); r.appendChild(c2);
+      r.appendChild(document.createElement('div')); totalsGrid.appendChild(r);
     });
   }
 
@@ -365,35 +345,29 @@
   }
   function renderStates(){ stateGrid.innerHTML=''; stateGrid.appendChild(stateRow('Эмоционально','mood')); stateGrid.appendChild(stateRow('Физически','body')); }
 
-  /* ====== Здоровье / замеры ====== */
+  /* ====== Здоровье (утро) ====== */
   const healthGrid=document.getElementById('healthGrid');
   function renderHealth(){
     const vd=getViewDate(); healthGrid.innerHTML='';
-    // Вес — каждый день
-    let r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Вес (кг)</div>`; 
+    // Вес — всегда
+    let r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="time">Вес (кг)</div>`;
     let c=document.createElement('div'); c.className='label';
-    let i=document.createElement('input'); i.type='number'; i.min='40'; i.max='200'; i.step='0.1'; i.placeholder='кг'; i.value=localStorage.getItem(WEIGHT_KEY(vd))||''; 
-    i.onchange=()=>{localStorage.setItem(WEIGHT_KEY(vd),String(i.value||'')); scheduleSave();}; c.appendChild(i); 
-    r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
-
-    // Замеры (только воскресенье)
-    if (vd.getDay()===0){
-      const addCirc = (label,key)=>{
-        const row=document.createElement('div'); row.className='row'; 
-        const c1=document.createElement('div'); c1.className='time'; c1.textContent=label; row.appendChild(c1);
-        const c2=document.createElement('div'); c2.className='label'; 
-        const inp=document.createElement('input'); inp.type='number'; inp.min='20'; inp.max='200'; inp.step='0.5'; inp.placeholder='см'; 
-        const k=CIRC_KEY(vd,key); inp.value=localStorage.getItem(k)||''; 
-        inp.onchange=()=>{ if(inp.value==='') localStorage.removeItem(k); else localStorage.setItem(k,inp.value); scheduleSave(); };
-        c2.appendChild(inp); row.appendChild(c2); row.appendChild(document.createElement('div')); healthGrid.appendChild(row);
-      };
-      addCirc('Объём живота (см)','waist');
-      addCirc('Объём бицепса (см)','biceps');
-      addCirc('Объём квадрицепса (см)','quad');
+    let i=document.createElement('input'); i.type='number'; i.min='40'; i.max='200'; i.step='0.1'; i.placeholder='кг'; i.value=localStorage.getItem(WEIGHT_KEY(vd))||''; i.onchange=()=>{ if(i.value==='') localStorage.removeItem(WEIGHT_KEY(vd)); else localStorage.setItem(WEIGHT_KEY(vd),String(i.value)); scheduleSave();}; c.appendChild(i); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
+    // Замеры — только воскресенье
+    const isSunday = getViewDate().getDay()===0;
+    document.getElementById('circHint').style.display = isSunday ? 'none' : 'block';
+    if(isSunday){
+      const parts=[['Объём живота (см)','waist'],['Объём бицепса (см)','biceps'],['Объём квадрицепса (см)','quad']];
+      parts.forEach(([title,key])=>{
+        const rr=document.createElement('div'); rr.className='row'; rr.innerHTML=`<div class="time">${title}</div>`;
+        const cc=document.createElement('div'); cc.className='label';
+        const inp=document.createElement('input'); inp.type='number'; inp.min='10'; inp.max='200'; inp.step='0.1'; inp.placeholder='см'; inp.value=localStorage.getItem(CIRC_KEY(vd,key))||''; inp.onchange=()=>{ if(inp.value==='') localStorage.removeItem(CIRC_KEY(vd,key)); else localStorage.setItem(CIRC_KEY(vd,key),String(inp.value)); scheduleSave(); };
+        cc.appendChild(inp); rr.appendChild(cc); rr.appendChild(document.createElement('div')); healthGrid.appendChild(rr);
+      });
     }
   }
 
-  /* ====== Экспорт/импорт ====== */
+  /* ====== Экспорт / импорт ====== */
   document.getElementById('exportBtn').onclick=()=>{
     const data={}; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k) continue;
       if(k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k.startsWith('state:')||k.startsWith('metric:')||k.startsWith('circ:')||k==='theme'||k==='wakeTime'||k==='sleepTime'){ data[k]=localStorage.getItem(k); }
@@ -405,15 +379,15 @@
       applyTheme(localStorage.getItem('theme')||'dark'); loadTimes(); renderAll(); alert('Импорт завершён ✅'); scheduleSave();
     }catch{ alert('Ошибка импорта'); } };
 
-  /* ====== Сброс/Сохранить ====== */
+  /* ====== Сброс / Сохранить ====== */
   document.getElementById('resetDayBtn').onclick=()=>{
     const vd=getViewDate();
     for(let i=0;i<baseDay.length;i++) localStorage.removeItem(DAY_KEY(vd,i));
     for(let i=0;i<goalsDaily.length;i++) localStorage.removeItem(GOAL_KEY(vd,i));
-    ['Завтрак','Обед','Ужин','Перекусы'].forEach(m=>['Калории (ккал)','Белки (г)','Жиры (г)','Углеводы (г)'].forEach(f=>localStorage.removeItem(NF_KEY(vd,m,f))));
+    MEALS.forEach(m=>N_FIELDS.forEach(f=> localStorage.removeItem(NF_KEY(vd,m,f))));
     ['mood','body'].forEach(t=> localStorage.removeItem(STATE_KEY(vd,t)));
     localStorage.removeItem(WEIGHT_KEY(vd));
-    ['waist','biceps','quad'].forEach(k=> localStorage.removeItem(CIRC_KEY(vd,k)));
+    ['waist','biceps','quad'].forEach(p=> localStorage.removeItem(CIRC_KEY(vd,p)));
     renderAll(); scheduleSave();
   };
   document.getElementById('saveNearBtn').onclick=()=> syncSaveFor(getViewDate());
@@ -422,7 +396,8 @@
   async function sbGetUser(){ const {data:{user}}=await sb.auth.getUser(); return user; }
   function collectDailyFor(d){
     const s=ymd(d), out={};
-    for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k) continue;
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i); if(!k) continue;
       if(k.startsWith('day:'+s)||k.startsWith('goal:'+s)||k.startsWith('n:'+s)||k.startsWith('state:'+s)||k.startsWith('metric:'+s)||k.startsWith('circ:'+s)) out[k]=localStorage.getItem(k);
     } return out;
   }
@@ -444,48 +419,42 @@
     if(Object.keys(weekly).length) await sb.from('weekly_data').upsert({user_id:user.id, week_id:w, data:weekly, updated_at:new Date().toISOString()},{onConflict:'user_id,week_id'});
   }
   let saveTimer; function scheduleSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>syncSaveFor(getViewDate()),800); }
-  try{ sb.channel('changes')
-      .on('postgres_changes',{event:'*',schema:'public',table:'daily_data'},()=>syncLoadFor(getViewDate()))
-      .on('postgres_changes',{event:'*',schema:'public',table:'weekly_data'},()=>syncLoadFor(getViewDate()))
-      .subscribe(); }catch(e){}
 
-  /* ====== Auth (magic link) ====== */
-  // Обмен кода на сессию + чистка URL, чтобы работало и на GitHub Pages
-  const REDIRECT_BASE = (() => {
-    const u = new URL(window.location.href);
-    let p = u.pathname;
-    // оставляем текущую директорию
-    if (p.endsWith('.html')) p = p.slice(0, p.lastIndexOf('/')+1);
-    if (!p.endsWith('/')) p += '/';
-    return `${u.origin}${p}`;
-  })();
-
-  (async ()=>{
-    try { try{ await sb.auth.exchangeCodeForSession(window.location.href); }catch(_){} 
-      if (/[?#].*(access_token|refresh_token|code)=/i.test(location.href)) history.replaceState({}, document.title, REDIRECT_BASE + 'index.html');
-    } catch {}
-  })();
-
-  document.getElementById('loginBtn').onclick=async()=>{
-    const email=document.getElementById('emailInput').value.trim(); if(!email) return alert('Введи email');
-    try{
-      const {error}=await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.href } });
-      if(error) alert('Ошибка входа: '+error.message); else alert('Письмо со ссылкой отправлено на email.');
-    }catch{ alert('Сетевая ошибка. Проверь «URL Configuration» в Supabase и блокировщики.'); }
+  /* ====== Авторизация (UI) ====== */
+  document.getElementById('loginBtn').onclick = async () => {
+    const email = document.getElementById('emailInput').value.trim();
+    if (!email) return alert('Введи email');
+    const base = (location.origin + location.pathname).replace(/[^/]+$/,'');
+    const authCb = base + 'auth.html';
+    localStorage.setItem('returnTo', location.href);
+    const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: authCb } });
+    if (error) alert('Ошибка входа: ' + error.message);
+    else alert('Письмо со ссылкой отправлено. Открой ссылку в браузере (не во встроенном).');
   };
-  document.getElementById('logoutBtn').onclick=async()=>{ await sb.auth.signOut(); location.reload(); };
-  sb.auth.onAuthStateChange(async (_e, session)=>{
-    const u=session?.user; document.getElementById('logoutBtn').style.display=u?'inline-flex':'none'; document.getElementById('whoami').textContent=u?('• '+(u.email||u.id)) : '';
-    if(u) await syncLoadFor(getViewDate());
+  document.getElementById('logoutBtn').onclick = async () => {
+    await sb.auth.signOut({ scope:'local' });
+    try { if ('caches' in window) { const keys = await caches.keys(); for (const k of keys) if (/tracker-v1/.test(k)) await caches.delete(k); } } catch {}
+    location.reload();
+  };
+  sb.auth.onAuthStateChange((_evt, session) => {
+    const u=session?.user||null;
+    document.getElementById('logoutBtn').style.display=u?'inline-flex':'none';
+    document.getElementById('whoami').textContent=u?('• '+(u.email||u.id)):'';
   });
 
-  // «Итоги недели» только в воскресенье выбранной даты
+  // Резервный обмен кода (если вдруг пришли на эту страницу по ссылке)
+  (async ()=>{ try{ try{ await sb.auth.exchangeCodeForSession(window.location.href);}catch(_){}
+    if (/[?#].*(access_token|refresh_token|code)=/i.test(location.href)) {
+      const u=new URL(location.href); history.replaceState({},document.title,`${u.origin}${u.pathname}`);
+    }}catch{} })();
+
+  /* ====== Показ воскресных блоков ====== */
   function toggleWeeklyVisibility(){ const sec=document.getElementById('weeklySection'); sec.style.display=(getViewDate().getDay()===0)?'block':'none'; }
 
-  function renderAll(){ renderTabs(); renderSchedule(); renderMeals(); renderTotals(); renderDailyGoals(); renderWeeklyGoals(); renderStates(); renderHealth(); updateProgress(); toggleWeeklyVisibility(); bindSportLink(); }
+  function renderAll(){ renderTabs(); renderSchedule(); renderMeals(); renderTotals(); renderDailyGoals(); renderWeeklyGoals(); renderStates(); renderHealth(); updateProgress(); toggleWeeklyVisibility(); }
   loadTimes(); renderAll();
 
-  // Навигация недель
+  // Навигация по неделям
   document.getElementById('prevWeekBtn').onclick=()=>{ viewWeekStart=addDays(viewWeekStart,-7); renderAll(); syncLoadFor(getViewDate()); };
   document.getElementById('nextWeekBtn').onclick=()=>{ viewWeekStart=addDays(viewWeekStart, 7); renderAll(); syncLoadFor(getViewDate()); };
   </script>
