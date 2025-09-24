@@ -25,8 +25,13 @@
 
 <div id="programWrap"></div>
 
+<div style="position:fixed;left:12px;bottom:12px">
+  <button id="syncBtn" class="btn">Sync (в облако)</button>
+  <span id="syncStatus" class="small" style="margin-left:8px">локально</span>
+</div>
+
 <script>
-/* Supabase (подставлены ваши значения) */
+/* Supabase */
 const SUPABASE_URL = "https://afxbyrypaqnobaalipjm.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_vROzTIfTCdtiea3xfMCcHA_bthD-zZr";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -64,18 +69,25 @@ const WEEK_PROGRAM = {
 const pad=n=>String(n).padStart(2,'0');
 const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const today = new Date(); const dayIndex = (today.getDay()+6)%7;
+
 document.getElementById('dateTitle').textContent = `${ymd(today)} • ${WEEK_PROGRAM[dayIndex].title}`;
+
+function getLocalMapForToday(){
+  const out = {};
+  const prefix = ymd(today);
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(k && k.includes(prefix)) out[k] = localStorage.getItem(k);
+  }
+  return out;
+}
 
 function createSquare(checked){ const b=document.createElement('div'); b.className='square'; b.textContent = checked ? '✔' : ''; return b; }
 
 async function renderProgram(){
-  programWrap.innerHTML=''; const dayProg = WEEK_PROGRAM[dayIndex];
-  const user=(await sb.auth.getUser()).data?.user;
-  let map = {};
-  if(user){
-    const { data } = await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd', ymd(today)).maybeSingle();
-    map = (data && data.data) ? data.data : {};
-  }
+  programWrap.innerHTML = '';
+  const dayProg = WEEK_PROGRAM[dayIndex];
+  const map = getLocalMapForToday();
   dayProg.ex.forEach(ex=>{
     const card=document.createElement('div'); card.className='card';
     const h=document.createElement('h3'); h.textContent = ex.title; card.appendChild(h);
@@ -83,17 +95,13 @@ async function renderProgram(){
       const wrap=document.createElement('div'); wrap.style.display='flex'; wrap.style.gap='8px';
       for(let s=0;s<ex.sets;s++){
         const key = `w:${ymd(today)}:${ex.id}:${s}`;
-        const checked = map?.[key] === '1';
+        const checked = map[key] === '1';
         const sq = createSquare(checked);
-        sq.onclick = async ()=>{
-          const user=(await sb.auth.getUser()).data?.user; if(!user) return alert('Войдите');
-          const { data: remote } = await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd', ymd(today)).maybeSingle();
-          const existing = (remote && remote.data)?remote.data:{};
-          existing[key] = existing[key] === '1' ? null : '1';
-          Object.keys(existing).forEach(k=>{ if(existing[k]==null) delete existing[k]; });
-          if(Object.keys(existing).length===0) await sb.from('daily_data').delete().eq('user_id',user.id).eq('ymd', ymd(today));
-          else await sb.from('daily_data').upsert({ user_id:user.id, ymd: ymd(today), data: existing, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' });
-          await renderProgram();
+        sq.onclick = ()=>{
+          // toggle local
+          if(localStorage.getItem(key) === '1') localStorage.removeItem(key);
+          else localStorage.setItem(key,'1');
+          renderProgram();
         };
         wrap.appendChild(sq);
       }
@@ -105,23 +113,41 @@ async function renderProgram(){
         const label=document.createElement('div'); label.className='small'; label.textContent = m; div.appendChild(label);
         const inp=document.createElement('input'); inp.type='text';
         const key = `w:${ymd(today)}:metric:${ex.id}:${mi}`;
-        inp.value = map?.[key] ?? '';
-        inp.onchange = async ()=>{
-          const user=(await sb.auth.getUser()).data?.user; if(!user) return alert('Войдите');
-          const { data: remote } = await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd', ymd(today)).maybeSingle();
-          const existing = (remote && remote.data)?remote.data:{};
-          existing[key] = inp.value ? String(inp.value) : null;
-          Object.keys(existing).forEach(k=>{ if(existing[k]==null) delete existing[k]; });
-          if(Object.keys(existing).length===0) await sb.from('daily_data').delete().eq('user_id',user.id).eq('ymd', ymd(today));
-          else await sb.from('daily_data').upsert({ user_id:user.id, ymd: ymd(today), data: existing, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' });
-          await renderProgram();
-        };
-        div.appendChild(inp); card.appendChild(div);
+        inp.value = map[key] || '';
+        inp.onchange = ()=> { if(inp.value) localStorage.setItem(key, String(inp.value)); else localStorage.removeItem(key); };
+        div.appendChild(inp);
+        card.appendChild(div);
       });
     }
     programWrap.appendChild(card);
   });
 }
+
+document.getElementById('syncBtn').onclick = async ()=>{
+  // reuse syncUp from index.html style
+  const { data: userResp } = await sb.auth.getUser().catch(()=>({data:{user:null}}));
+  const user = userResp?.user;
+  if(!user) return alert('Для синхронизации войдите на главной странице (magic link).');
+  const dateStr = ymd(today);
+  // collect local keys for today
+  const local = getLocalMapForToday();
+  const dailyData = {};
+  const weeklyData = {};
+  Object.entries(local).forEach(([k,v])=>{
+    if(k.startsWith('wgoal:') || k.startsWith('w:')) weeklyData[k] = v;
+    else dailyData[k] = v;
+  });
+  try{
+    if(Object.keys(dailyData).length) await sb.from('daily_data').upsert({ user_id:user.id, ymd: dateStr, data: dailyData, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' });
+    else await sb.from('daily_data').delete().eq('user_id', user.id).eq('ymd', dateStr);
+    if(Object.keys(weeklyData).length) await sb.from('weekly_data').upsert({ user_id:user.id, week_id: (function(){const d=new Date(); const day=(d.getDay()+6)%7; return isoWeek(d); })(), data: weeklyData, updated_at:new Date().toISOString() }, { onConflict:'user_id,week_id' });
+    else {/* nothing */}
+    document.getElementById('syncStatus').textContent = 'синхронизировано';
+    alert('Синхронизировано в облако');
+  }catch(err){ console.error(err); alert('Ошибка синхронизации: '+(err.message||err)); }
+};
+
+function isoWeek(d){ const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-day+3); const first=new Date(Date.UTC(t.getUTCFullYear(),0,4)); const w=1+Math.round(((t-first)/86400000-3+((first.getUTCDay()+6)%7))/7); return `${t.getUTCFullYear()}-W${String(w).padStart(2,'0')}`; }
 
 renderProgram();
 </script>
