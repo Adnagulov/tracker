@@ -4,38 +4,51 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Графики</title>
+<link rel="icon" href="favicon.png" type="image/svg+xml" />
 <style>
- body{margin:0;font-family:Inter,system-ui;background:#0f172a;color:#e6eef8;padding:12px}
- .wrap{max-width:980px;margin:0 auto}
- .card{background:#0d1320;border:1px solid #1f2937;padding:12px;border-radius:10px;margin-bottom:12px}
+ body{margin:0;font-family:Inter,system-ui;background:var(--bg);color:var(--text)}
+ :root{--bg:#0f172a;--card:#111827;--text:#e6eef8;--muted:#94a3b8;--border:#1f2937}
+ [data-theme="light"]{--bg:#ffffff;--card:#f8fafc;--text:#0f172a;--muted:#374151;--border:#e5e7eb}
+ .wrap{max-width:980px;margin:0 auto;padding:12px}
+ header{padding:12px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.05)}
+ .card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:12px;margin-bottom:12px}
  canvas{width:100%!important;height:300px!important}
- .small{font-size:13px;color:#94a3b8}
+ .small{font-size:13px;color:var(--muted)}
+ .btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-weight:600}
+ .btn:hover{background:#3b82f6;color:#fff}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-<div class="wrap">
-  <div class="card">
-    <h2 style="margin:0">Графики</h2>
-    <div class="small">Данные читаются из локального хранилища. Нажмите "Загрузить из облака" на главной, чтобы подтянуть данные.</div>
+<header>
+  <div class="wrap" style="display:flex;justify-content:space-between;align-items:center">
+    <div class="small">Графики прогресса • данные читаются из локального хранилища (загрузите из облака на главной).</div>
+    <div>
+      <button id="themeBtn" class="btn">🌙/☀️</button>
+      <a href="index.html" class="btn">← Назад</a>
+    </div>
   </div>
+</header>
 
-  <div class="card"><h3>Вес (факт)</h3><canvas id="weightChart"></canvas></div>
-  <div class="card"><h3>Объём живота</h3><canvas id="waistChart"></canvas></div>
-  <div class="card"><h3>Объём бицепса</h3><canvas id="bicepsChart"></canvas></div>
-  <div class="card"><h3>Объём квадрицепса</h3><canvas id="quadChart"></canvas></div>
-
-  <div class="card"><a href="index.html" class="small">← Вернуться</a></div>
+<div class="wrap">
+  <div class="card"><h3 style="margin:0">Вес (факт) vs целевой</h3><canvas id="weightChart"></canvas></div>
+  <div class="card"><h3 style="margin:0">Объём живота</h3><canvas id="waistChart"></canvas></div>
+  <div class="card"><h3 style="margin:0">Объём бицепса</h3><canvas id="bicepsChart"></canvas></div>
+  <div class="card"><h3 style="margin:0">Объём квадрицепса</h3><canvas id="quadChart"></canvas></div>
 </div>
 
 <script>
+/* theme */
+(function(){ const t=localStorage.getItem('theme')||'dark'; document.documentElement.setAttribute('data-theme', t); })();
+document.getElementById('themeBtn').onclick=()=>{ const cur=document.documentElement.getAttribute('data-theme'); const next=cur==='dark'?'light':'dark'; document.documentElement.setAttribute('data-theme', next); localStorage.setItem('theme', next); };
+
 /* Supabase (на случай прямой sync) */
 const SUPABASE_URL = "https://afxbyrypaqnobaalipjm.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_vROzTIfTCdtiea3xfMCcHA_bthD-zZr";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* target weight plan (your table) */
+/* target plan */
 const TARGET = [
   ['2025-09-17',97],['2025-09-23',95.9],['2025-09-30',94.7],['2025-10-07',93.6],
   ['2025-10-14',92.5],['2025-10-21',91.3],['2025-10-28',90.2],['2025-11-04',89.1],
@@ -46,9 +59,7 @@ const TARGET = [
 function pad(n){ return String(n).padStart(2,'0'); }
 function ymd(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
 
-/* collect series from localStorage (scan keys) */
 function collectLocalSeries(){
-  // We'll take last 16 target dates as labels
   const labels = TARGET.map(t=>t[0]);
   const weightActual = labels.map(lbl => {
     const v = localStorage.getItem(`metric:${lbl}:weight`);
@@ -61,13 +72,23 @@ function collectLocalSeries(){
   return { labels, weightActual, waist, biceps, quad, target };
 }
 
+
+function fmtLabel(lbl){
+  // lbl like '2025-09-17' -> '17.09'
+  const [y,m,d] = lbl.split('-');
+  return d+'.'+m;
+}
 function mkLine(ctx, labels, datasets){
+
   return new Chart(ctx, {
     type:'line',
     data:{ labels, datasets },
     options:{
       responsive:true, interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:true}}, scales:{ y:{ beginAtZero:false } }
+      plugins:{legend:{display:true, labels:{boxWidth:10, font:{size:11}}}}, scales:{
+        x:{ ticks:{ callback:(v,i,vals)=> fmtLabel(this.getLabelForValue ? this.getLabelForValue(v): labels[v]||''), maxRotation:0, autoSkip:true, font:{size:10} } },
+        y:{ beginAtZero:false, ticks:{ font:{size:10} } }
+      }
     }
   });
 }

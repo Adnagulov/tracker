@@ -4,33 +4,50 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Тренировка дня</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
 <style>
- :root{--bg:#0f172a;--card:#0d1320;--muted:#94a3b8;--text:#e6eef8;--border:#1f2937}
- body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui;padding:12px}
- .card{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:10px;margin-bottom:12px}
- .flex{display:flex;gap:8px;align-items:center}
- .square{width:44px;height:44px;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+ :root{--bg:#0f172a;--card:#111827;--muted:#9ca3af;--text:#f9fafb;--border:#1f2937;--accent:#3b82f6}
+ [data-theme="light"]{--bg:#ffffff;--card:#f8fafc;--muted:#374151;--text:#0f172a;--border:#e5e7eb;--accent:#2563eb}
+ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui}
+ .wrap{max-width:980px;margin:0 auto;padding:12px}
+ .card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:12px;margin:12px 0;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+ .flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+ .square{width:40px;height:40px;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer}
  .small{font-size:13px;color:var(--muted)}
- @media(max-width:560px){ .square{width:36px;height:36px} }
+ input{padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);min-width:120px}
+ .btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-weight:600}
+ .btn:hover{background:var(--accent);color:#fff}
+ header{padding:12px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.05)}
+ h2{margin:0}
+ table{width:100%;border-collapse:collapse;margin-top:8px}
+ th,td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left}
+ th{color:var(--muted);font-weight:500;font-size:13px}
+ .rowsets{display:grid;grid-template-columns:56px 1fr;gap:8px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-<div class="card">
-  <div style="display:flex;justify-content:space-between;align-items:center">
-    <div><h2 style="margin:0">Тренировка</h2><div id="dateTitle" class="small"></div></div>
-    <div><a class="small" href="index.html">← Назад</a></div>
+<header>
+  <div class="wrap flex" style="justify-content:space-between;align-items:center">
+    <div class="flex" style="gap:10px">
+      <button id="themeBtn" class="btn" title="Светлая/тёмная">🌙/☀️</button>
+      <a class="btn" href="index.html">← Назад</a>
+    </div>
+    <div class="small" id="dateTitle">—</div>
+    <div class="flex">
+      <button id="syncBtn" class="btn">Sync</button>
+      <span id="syncStatus" class="small" style="margin-left:8px">локально</span>
+    </div>
   </div>
-</div>
+</header>
 
-<div id="programWrap"></div>
-
-<div style="position:fixed;left:12px;bottom:12px">
-  <button id="syncBtn" class="btn">Sync (в облако)</button>
-  <span id="syncStatus" class="small" style="margin-left:8px">локально</span>
-</div>
+<div class="wrap" id="programWrap"></div>
 
 <script>
+/* Theme */
+(function(){ const t=localStorage.getItem('theme')||'dark'; document.documentElement.setAttribute('data-theme', t); })();
+document.getElementById('themeBtn').onclick=()=>{ const cur=document.documentElement.getAttribute('data-theme'); const next=cur==='dark'?'light':'dark'; document.documentElement.setAttribute('data-theme', next); localStorage.setItem('theme', next); };
+
 /* Supabase */
 const SUPABASE_URL = "https://afxbyrypaqnobaalipjm.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_vROzTIfTCdtiea3xfMCcHA_bthD-zZr";
@@ -39,27 +56,37 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 /* program */
 const WEEK_PROGRAM = {
   0:{title:'Понедельник',place:'Силовая дома',ex:[
-    {id:'sq',title:'Присед с гирей 4x12',sets:4},
-    {id:'lung',title:'Выпады с гантелями 3x10/нога',sets:3},
-    {id:'press',title:'Жим гантелей лёжа 4x12',sets:4},
-    {id:'curl',title:'Подъём гантелей на бицепс 3x12',sets:3},
-    {id:'plank',title:'Планка 3x60с',sets:3}
+    {id:'sq',title:'Присед с гирей 4×12',sets:4},
+    {id:'lung',title:'Выпады с гантелями 3×10/нога',sets:3},
+    {id:'press',title:'Жим гантелей лёжа 4×12',sets:4},
+    {id:'curl',title:'Подъём гантелей на бицепс 3×12',sets:3},
+    {id:'plank',title:'Планка 3×60с',sets:3, note:'секунды'}
   ]},
   1:{title:'Вторник',place:'Бег улица',ex:[
     {id:'tempo',title:'Темповый бег 30–40 мин',metrics:['Время (мин)','Средняя скорость','Средний пульс']},
-    {id:'stretch',title:'Растяжка 10 мин',sets:1}
+    {id:'stretch',title:'Растяжка 10 мин',sets:1, note:'мин'}
   ]},
   2:{title:'Среда',place:'Силовая улица',ex:[
-    {id:'pull',title:'Подтягивания 4xmax',sets:4},{id:'dips',title:'Брусья 4xmax',sets:4},{id:'aus',title:'Австралийские подтягивания 3x12',sets:3},{id:'leglift',title:'Подъём ног в висе 3xmax',sets:3}
+    {id:'pull',title:'Подтягивания 4×max',sets:4},
+    {id:'dips',title:'Брусья 4×max',sets:4},
+    {id:'aus',title:'Австралийские подтягивания 3×12',sets:3},
+    {id:'leglift',title:'Подъём ног в висе 3×max',sets:3}
   ]},
   3:{title:'Четверг',place:'Бег улица',ex:[
     {id:'intervals',title:'Интервалы 8–10×(1 мин быстрый/90 сек шаг)',metrics:['Подходы выполнено']}
   ]},
   4:{title:'Пятница',place:'Силовая дома',ex:[
-    {id:'row',title:'Тяга гири в наклоне 4x12',sets:4},{id:'ohp',title:'Жим гири 3x10/рука',sets:3},{id:'push',title:'Отжимания 4x15',sets:4},{id:'bridge',title:'Ягодичный мостик 3x15',sets:3},{id:'abs',title:'Скручивания 3x20',sets:3}
+    {id:'row',title:'Тяга гири в наклоне 4×12',sets:4},
+    {id:'ohp',title:'Жим гири 3×10/рука',sets:3},
+    {id:'push',title:'Отжимания 4×15',sets:4},
+    {id:'bridge',title:'Ягодичный мостик 3×15',sets:3},
+    {id:'abs',title:'Скручивания 3×20',sets:3}
   ]},
   5:{title:'Суббота',place:'Силовая улица',ex:[
-    {id:'pull2',title:'Подтягивания 4xmax',sets:4},{id:'dips2',title:'Отжимания на брусьях 4xmax',sets:4},{id:'push2',title:'Отжимания 3x15',sets:3},{id:'sideplank',title:'Планка боковая 3x30с/сторона',sets:3}
+    {id:'pull2',title:'Подтягивания 4×max',sets:4},
+    {id:'dips2',title:'Отжимания на брусьях 4×max',sets:4},
+    {id:'push2',title:'Отжимания 3×15',sets:3},
+    {id:'sideplank',title:'Планка боковая 3×30с/сторона',sets:3, note:'сек'}
   ]},
   6:{title:'Воскресенье',place:'Футбол',ex:[
     {id:'football',title:'Футбол 60–90 мин',metrics:['Минуты','Спринты 10×100м выполнены?']}
@@ -69,8 +96,7 @@ const WEEK_PROGRAM = {
 const pad=n=>String(n).padStart(2,'0');
 const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const today = new Date(); const dayIndex = (today.getDay()+6)%7;
-
-document.getElementById('dateTitle').textContent = `${ymd(today)} • ${WEEK_PROGRAM[dayIndex].title}`;
+document.getElementById('dateTitle').textContent = `${ymd(today)} • ${WEEK_PROGRAM[dayIndex].title} • ${WEEK_PROGRAM[dayIndex].place}`;
 
 function getLocalMapForToday(){
   const out = {};
@@ -82,6 +108,8 @@ function getLocalMapForToday(){
   return out;
 }
 
+function setState(key, val){ if(val==null || val==='') localStorage.removeItem(key); else localStorage.setItem(key, String(val)); }
+
 function createSquare(checked){ const b=document.createElement('div'); b.className='square'; b.textContent = checked ? '✔' : ''; return b; }
 
 async function renderProgram(){
@@ -90,33 +118,46 @@ async function renderProgram(){
   const map = getLocalMapForToday();
   dayProg.ex.forEach(ex=>{
     const card=document.createElement('div'); card.className='card';
-    const h=document.createElement('h3'); h.textContent = ex.title; card.appendChild(h);
+    const h=document.createElement('h3'); h.style.margin='0 0 8px 0'; h.textContent = ex.title; card.appendChild(h);
+
     if(ex.sets){
-      const wrap=document.createElement('div'); wrap.style.display='flex'; wrap.style.gap='8px';
+      // Таблица подходов: чек + поле "вес × повторы / примечание"
+      const table=document.createElement('table');
+      const thead=document.createElement('thead'); thead.innerHTML='<tr><th style="width:56px">✔</th><th>Вес / Повторы</th></tr>'; table.appendChild(thead);
+      const tbody=document.createElement('tbody');
       for(let s=0;s<ex.sets;s++){
-        const key = `w:${ymd(today)}:${ex.id}:${s}`;
-        const checked = map[key] === '1';
-        const sq = createSquare(checked);
-        sq.onclick = ()=>{
-          // toggle local
-          if(localStorage.getItem(key) === '1') localStorage.removeItem(key);
-          else localStorage.setItem(key,'1');
-          renderProgram();
-        };
-        wrap.appendChild(sq);
+        const row=document.createElement('tr');
+        const keyDone = `w:${ymd(today)}:${ex.id}:${s}`;
+        const keyVal  = `w:${ymd(today)}:${ex.id}:${s}:val`;
+
+        const td1=document.createElement('td');
+        const sq = createSquare(map[keyDone] === '1');
+        sq.onclick = ()=>{ if(localStorage.getItem(keyDone) === '1') localStorage.removeItem(keyDone); else localStorage.setItem(keyDone,'1'); sq.textContent = localStorage.getItem(keyDone)==='1'?'✔':''; };
+        td1.appendChild(sq);
+
+        const td2=document.createElement('td');
+        const inp=document.createElement('input');
+        inp.type='text'; inp.placeholder = ex.note ? ex.note : 'напр. 20×12';
+        inp.value = map[keyVal] || '';
+        inp.onchange = ()=> setState(keyVal, inp.value);
+        td2.appendChild(inp);
+
+        row.appendChild(td1); row.appendChild(td2);
+        tbody.appendChild(row);
       }
-      card.appendChild(wrap);
+      table.appendChild(tbody); card.appendChild(table);
     }
+
     if(ex.metrics){
       ex.metrics.forEach((m,mi)=>{
-        const div=document.createElement('div'); div.style.marginTop='8px';
-        const label=document.createElement('div'); label.className='small'; label.textContent = m; div.appendChild(label);
+        const row=document.createElement('div'); row.style.marginTop='8px'; row.className='rowsets';
+        const label=document.createElement('div'); label.className='small'; label.textContent=m; row.appendChild(label);
         const inp=document.createElement('input'); inp.type='text';
         const key = `w:${ymd(today)}:metric:${ex.id}:${mi}`;
         inp.value = map[key] || '';
-        inp.onchange = ()=> { if(inp.value) localStorage.setItem(key, String(inp.value)); else localStorage.removeItem(key); };
-        div.appendChild(inp);
-        card.appendChild(div);
+        inp.onchange = ()=> setState(key, inp.value);
+        row.appendChild(inp);
+        card.appendChild(row);
       });
     }
     programWrap.appendChild(card);
@@ -124,12 +165,10 @@ async function renderProgram(){
 }
 
 document.getElementById('syncBtn').onclick = async ()=>{
-  // reuse syncUp from index.html style
   const { data: userResp } = await sb.auth.getUser().catch(()=>({data:{user:null}}));
   const user = userResp?.user;
-  if(!user) return alert('Для синхронизации войдите на главной странице (magic link).');
+  if(!user){ document.getElementById('syncStatus').textContent='войдите на главной'; return; }
   const dateStr = ymd(today);
-  // collect local keys for today
   const local = getLocalMapForToday();
   const dailyData = {};
   const weeklyData = {};
@@ -139,15 +178,10 @@ document.getElementById('syncBtn').onclick = async ()=>{
   });
   try{
     if(Object.keys(dailyData).length) await sb.from('daily_data').upsert({ user_id:user.id, ymd: dateStr, data: dailyData, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' });
-    else await sb.from('daily_data').delete().eq('user_id', user.id).eq('ymd', dateStr);
-    if(Object.keys(weeklyData).length) await sb.from('weekly_data').upsert({ user_id:user.id, week_id: (function(){const d=new Date(); const day=(d.getDay()+6)%7; return isoWeek(d); })(), data: weeklyData, updated_at:new Date().toISOString() }, { onConflict:'user_id,week_id' });
-    else {/* nothing */}
+    if(Object.keys(weeklyData).length) await sb.from('weekly_data').upsert({ user_id:user.id, week_id: (function(){const d=new Date(); const day=(d.getDay()+6)%7; return (function isoWeek(d){ const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-day+3); const first=new Date(Date.UTC(t.getUTCFullYear(),0,4)); const w=1+Math.round(((t-first)/86400000-3+((first.getUTCDay()+6)%7))/7); return `${t.getUTCFullYear()}-${String(w).padStart(2,'0')}`; })(d); })(), data: weeklyData, updated_at:new Date().toISOString() }, { onConflict:'user_id,week_id' });
     document.getElementById('syncStatus').textContent = 'синхронизировано';
-    alert('Синхронизировано в облако');
-  }catch(err){ console.error(err); alert('Ошибка синхронизации: '+(err.message||err)); }
+  }catch(err){ console.error(err); document.getElementById('syncStatus').textContent='ошибка'; }
 };
-
-function isoWeek(d){ const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-day+3); const first=new Date(Date.UTC(t.getUTCFullYear(),0,4)); const w=1+Math.round(((t-first)/86400000-3+((first.getUTCDay()+6)%7))/7); return `${t.getUTCFullYear()}-W${String(w).padStart(2,'0')}`; }
 
 renderProgram();
 </script>
