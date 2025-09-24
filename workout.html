@@ -1,350 +1,129 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Тренировка дня</title>
-  <style>
-    :root{
-      --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb;
-      --accent:#22c55e; --accent2:#3b82f6; --warn:#f59e0b; --danger:#ef4444; --border:#1f2937; --chip-bg:#0b1222;
-    }
-    [data-theme="light"]{
-      --bg:#f7fafc; --card:#ffffff; --muted:#4b5563; --text:#0f172a; --border:#e5e7eb; --chip-bg:#eef2ff;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Inter,Arial,sans-serif}
-    header{border-bottom:1px solid var(--border);background:var(--bg)}
-    .wrap{max-width:1024px;margin:0 auto;padding:16px}
-    h1{margin:0 0 8px;font-size:26px;line-height:1.1}
-    .sub{color:var(--muted);font-size:13px}
-    .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);padding:6px 10px;border-radius:999px;background:#0b1024;font-size:12px}
-    [data-theme="light"] .pill{background:#f1f5f9}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;margin:12px 0}
-    .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--chip-bg);color:var(--text);cursor:pointer;font-weight:700}
-    .btn.primary{background:var(--accent2);color:#fff}
-    .btn.warn{background:var(--warn);color:#000}
-    .title{font-weight:800}
-    .muted{color:var(--muted);font-size:12px}
-    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    @media(max-width:800px){ .two-col{grid-template-columns:1fr} }
-    .setrow{display:flex;gap:8px;flex-wrap:wrap}
-    .setrow input[type="checkbox"]{width:28px;height:28px}
-    input[type="number"], input[type="text"]{
-      font-size:16px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text);
-      min-width:120px;max-width:160px
-    }
-    progress{width:100%;height:14px}
-  </style>
-
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const SUPABASE_URL = "https://afxbyrypaqnobaalipjm.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_vROzTIfTCdtiea3xfMCcHA_bthD-zZr";
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  </script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Тренировка дня</title>
+<style>
+ :root{--bg:#0f172a;--card:#0d1320;--muted:#94a3b8;--text:#e6eef8;--border:#1f2937}
+ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui;padding:12px}
+ .card{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:10px;margin-bottom:12px}
+ .flex{display:flex;gap:8px;align-items:center}
+ .square{width:44px;height:44px;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+ .small{font-size:13px;color:var(--muted)}
+ @media(max-width:560px){ .square{width:36px;height:36px} }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-<header>
-  <div class="wrap">
-    <div class="flex" style="justify-content:space-between;align-items:flex-start">
-      <div>
-        <h1>Тренировка дня</h1>
-        <div class="flex" style="gap:8px">
-          <div class="sub" id="dateLabel">—</div>
-          <span class="pill" id="sportPill">—</span>
-        </div>
-      </div>
-      <div class="flex">
-        <a class="btn" href="./index.html">← Назад</a>
-        <button class="btn" id="themeBtn">🌙/☀️</button>
-        <button class="btn primary" id="saveBtn">Сохранить</button>
-      </div>
-    </div>
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div><h2 style="margin:0">Тренировка</h2><div id="dateTitle" class="small"></div></div>
+    <div><a class="small" href="index.html">← Назад</a></div>
   </div>
-</header>
+</div>
 
-<main class="wrap">
-  <section class="card">
-    <div class="flex" style="justify-content:space-between;align-items:center">
-      <div class="flex">
-        <span class="pill">Подходы: <b id="setsDone">0</b>/<b id="setsTotal">0</b></span>
-        <span class="pill">Задания (метрики): <b id="mDone">0</b>/<b id="mTotal">0</b></span>
-      </div>
-      <div style="min-width:220px">
-        <progress id="prog" value="0" max="100"></progress>
-      </div>
-    </div>
-    <div class="flex" style="margin-top:8px">
-      <button class="btn primary" id="completeAll">Все упражнения выполнены</button>
-      <button class="btn warn" id="resetBtn">Сброс дня</button>
-    </div>
-  </section>
-
-  <section class="card">
-    <div class="title" style="margin-bottom:6px">Программа</div>
-    <div class="muted">Тап по квадратику — отметить подход/интервал. Поля и галочки сохраняются локально и в Supabase (по дате).</div>
-  </section>
-
-  <section class="two-col" id="workoutGrid"></section>
-
-  <section class="card">
-    <div class="title" style="margin-bottom:6px">Заметка к тренировке</div>
-    <input id="note" type="text" placeholder="Как прошла сессия, самочувствие, техника..." style="width:100%;max-width:none">
-  </section>
-</main>
+<div id="programWrap"></div>
 
 <script>
-/* ===== Тема ===== */
-const root=document.documentElement;
-function applyTheme(t){ root.setAttribute('data-theme',t); localStorage.setItem('theme',t); }
-applyTheme(localStorage.getItem('theme')||'dark');
-document.getElementById('themeBtn').onclick=()=>applyTheme(root.getAttribute('data-theme')==='dark'?'light':'dark');
+/* Supabase (подставлены ваши значения) */
+const SUPABASE_URL = "https://afxbyrypaqnobaalipjm.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_vROzTIfTCdtiea3xfMCcHA_bthD-zZr";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* ===== Дата/день недели ===== */
-const planName = {
-  0:'Силовая дома',
-  1:'Бег улица',
-  2:'Силовая улица',
-  3:'Бег улица',
-  4:'Силовая дома',
-  5:'Силовая улица',
-  6:'Футбол'
-};
-const PLAN = {
-  0:[
-    {type:'sets', slug:'kb-squat',  name:'Присед с гирей',           detail:'4×12',       sets:4},
-    {type:'sets', slug:'db-lunge',  name:'Выпады с гантелями',       detail:'3×10/нога', sets:3},
-    {type:'sets', slug:'db-bench',  name:'Жим гантелей лёжа',        detail:'4×12',       sets:4},
-    {type:'sets', slug:'db-biceps', name:'Подъём гантелей на бицепс',detail:'3×12',       sets:3},
-    {type:'sets', slug:'plank',     name:'Планка',                   detail:'3×60с',      sets:3}
-  ],
-  1:[
-    {type:'run', slug:'run-tempo', name:'Темповый бег 30–40 мин', fields:[
-      {k:'time', ph:'мин'},
-      {k:'pace', ph:'ср. скорость (км/ч)'},
-      {k:'hr',   ph:'ср. пульс'}
-    ]},
-    {type:'metric', slug:'stretch', name:'Растяжка', fields:[{k:'mins', ph:'10 мин'}]}
-  ],
-  2:[
-    {type:'sets', slug:'pullups',         name:'Подтягивания',                detail:'4×max', sets:4},
-    {type:'sets', slug:'dips',            name:'Брусья',                      detail:'4×max', sets:4},
-    {type:'sets', slug:'australian-pull', name:'Австралийские подтягивания',  detail:'3×12',  sets:3},
-    {type:'sets', slug:'leg-raise-hang',  name:'Подъём ног в висе',           detail:'3×max', sets:3}
-  ],
-  3:[
-    {type:'intervals', slug:'run-intervals', name:'Интервалы 8–10×(1 мин быстрый / 90 сек шаг)', total:10, required:8},
-    {type:'metric',    slug:'cooldown',      name:'Заминка', fields:[{k:'mins', ph:'10 мин'}]}
-  ],
-  4:[
-    {type:'sets', slug:'kb-row',        name:'Тяга гири в наклоне',        detail:'4×12',     sets:4},
-    {type:'sets', slug:'kb-press-oh',   name:'Жим гири над головой',       detail:'3×10/рука',sets:3},
-    {type:'sets', slug:'pushups',       name:'Отжимания',                   detail:'4×15',     sets:4},
-    {type:'sets', slug:'glute-bridge',  name:'Ягодичный мостик с гирей',    detail:'3×15',     sets:3},
-    {type:'sets', slug:'crunch',        name:'Скручивания',                 detail:'3×20',     sets:3}
-  ],
-  5:[
-    {type:'sets', slug:'pullups2',    name:'Подтягивания',            detail:'4×max',    sets:4},
-    {type:'sets', slug:'dips2',       name:'Отжимания на брусьях',    detail:'4×max',    sets:4},
-    {type:'sets', slug:'pushups2',    name:'Отжимания от пола',       detail:'3×15',     sets:3},
-    {type:'sets', slug:'side-plank',  name:'Планка боковая',          detail:'3×30с/стор',sets:3}
-  ],
-  6:[
-    {type:'metric',    slug:'football', name:'Футбол', fields:[{k:'mins', ph:'60–90 мин'}]},
-    {type:'intervals', slug:'sprints',  name:'Спринты 10×100м, отдых 90 сек', total:10, required:10}
-  ]
+/* program */
+const WEEK_PROGRAM = {
+  0:{title:'Понедельник',place:'Силовая дома',ex:[
+    {id:'sq',title:'Присед с гирей 4x12',sets:4},
+    {id:'lung',title:'Выпады с гантелями 3x10/нога',sets:3},
+    {id:'press',title:'Жим гантелей лёжа 4x12',sets:4},
+    {id:'curl',title:'Подъём гантелей на бицепс 3x12',sets:3},
+    {id:'plank',title:'Планка 3x60с',sets:3}
+  ]},
+  1:{title:'Вторник',place:'Бег улица',ex:[
+    {id:'tempo',title:'Темповый бег 30–40 мин',metrics:['Время (мин)','Средняя скорость','Средний пульс']},
+    {id:'stretch',title:'Растяжка 10 мин',sets:1}
+  ]},
+  2:{title:'Среда',place:'Силовая улица',ex:[
+    {id:'pull',title:'Подтягивания 4xmax',sets:4},{id:'dips',title:'Брусья 4xmax',sets:4},{id:'aus',title:'Австралийские подтягивания 3x12',sets:3},{id:'leglift',title:'Подъём ног в висе 3xmax',sets:3}
+  ]},
+  3:{title:'Четверг',place:'Бег улица',ex:[
+    {id:'intervals',title:'Интервалы 8–10×(1 мин быстрый/90 сек шаг)',metrics:['Подходы выполнено']}
+  ]},
+  4:{title:'Пятница',place:'Силовая дома',ex:[
+    {id:'row',title:'Тяга гири в наклоне 4x12',sets:4},{id:'ohp',title:'Жим гири 3x10/рука',sets:3},{id:'push',title:'Отжимания 4x15',sets:4},{id:'bridge',title:'Ягодичный мостик 3x15',sets:3},{id:'abs',title:'Скручивания 3x20',sets:3}
+  ]},
+  5:{title:'Суббота',place:'Силовая улица',ex:[
+    {id:'pull2',title:'Подтягивания 4xmax',sets:4},{id:'dips2',title:'Отжимания на брусьях 4xmax',sets:4},{id:'push2',title:'Отжимания 3x15',sets:3},{id:'sideplank',title:'Планка боковая 3x30с/сторона',sets:3}
+  ]},
+  6:{title:'Воскресенье',place:'Футбол',ex:[
+    {id:'football',title:'Футбол 60–90 мин',metrics:['Минуты','Спринты 10×100м выполнены?']}
+  ]}
 };
 
-const qs=new URLSearchParams(location.search);
-const dateStr = qs.get('date') || new Date().toISOString().slice(0,10);
-const dateObj = new Date(dateStr);
-const weekday = (dateObj.getDay()+6)%7; // ISO: Пн=0
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const today = new Date(); const dayIndex = (today.getDay()+6)%7;
+document.getElementById('dateTitle').textContent = `${ymd(today)} • ${WEEK_PROGRAM[dayIndex].title}`;
 
-document.getElementById('dateLabel').textContent = `${['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][weekday]} • ${dateStr}`;
-document.getElementById('sportPill').textContent = planName[weekday] || '—';
+function createSquare(checked){ const b=document.createElement('div'); b.className='square'; b.textContent = checked ? '✔' : ''; return b; }
 
-/* ===== Ключи для хранения ===== */
-const WKEY_SET = (slug,i)=>`workout:${dateStr}:${slug}:set:${i}`;
-const WKEY_FIELD=(slug,k)=>`workout:${dateStr}:${slug}:field:${k}`;
-const NOTE_KEY  = `workout:${dateStr}:note`;
-const GOAL_SPORT= `goal:${dateStr}:5`;
-
-/* ===== Рендер ===== */
-const grid=document.getElementById('workoutGrid');
-
-function renderProgram(){
-  grid.innerHTML='';
-  const blocks = PLAN[weekday] || [];
-  blocks.forEach(block=>{
+async function renderProgram(){
+  programWrap.innerHTML=''; const dayProg = WEEK_PROGRAM[dayIndex];
+  const user=(await sb.auth.getUser()).data?.user;
+  let map = {};
+  if(user){
+    const { data } = await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd', ymd(today)).maybeSingle();
+    map = (data && data.data) ? data.data : {};
+  }
+  dayProg.ex.forEach(ex=>{
     const card=document.createElement('div'); card.className='card';
-
-    // заголовок
-    const head=document.createElement('div'); head.className='title'; head.textContent = block.detail ? `${block.name} — ${block.detail}` : block.name;
-    card.appendChild(head);
-
-    if(block.type==='sets' || block.type==='intervals'){
-      const n = block.type==='sets' ? block.sets : block.total;
-      const row=document.createElement('div'); row.className='setrow';
-      for(let i=1;i<=n;i++){
-        const cb=document.createElement('input'); cb.type='checkbox';
-        const k=WKEY_SET(block.slug,i);
-        cb.checked = localStorage.getItem(k)==='1';
-        cb.onchange = ()=>{ localStorage.setItem(k, cb.checked?'1':'0'); recount(); scheduleSave(); };
-        row.appendChild(cb);
+    const h=document.createElement('h3'); h.textContent = ex.title; card.appendChild(h);
+    if(ex.sets){
+      const wrap=document.createElement('div'); wrap.style.display='flex'; wrap.style.gap='8px';
+      for(let s=0;s<ex.sets;s++){
+        const key = `w:${ymd(today)}:${ex.id}:${s}`;
+        const checked = map?.[key] === '1';
+        const sq = createSquare(checked);
+        sq.onclick = async ()=>{
+          const user=(await sb.auth.getUser()).data?.user; if(!user) return alert('Войдите');
+          const { data: remote } = await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd', ymd(today)).maybeSingle();
+          const existing = (remote && remote.data)?remote.data:{};
+          existing[key] = existing[key] === '1' ? null : '1';
+          Object.keys(existing).forEach(k=>{ if(existing[k]==null) delete existing[k]; });
+          if(Object.keys(existing).length===0) await sb.from('daily_data').delete().eq('user_id',user.id).eq('ymd', ymd(today));
+          else await sb.from('daily_data').upsert({ user_id:user.id, ymd: ymd(today), data: existing, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' });
+          await renderProgram();
+        };
+        wrap.appendChild(sq);
       }
-      card.appendChild(row);
-      if(block.type==='intervals'){
-        const hint=document.createElement('div'); hint.className='muted'; hint.textContent=`Требуется ${block.required} из ${block.total}`;
-        card.appendChild(hint);
-      }
+      card.appendChild(wrap);
     }
-
-    if(block.type==='run' || block.type==='metric'){
-      const fields=document.createElement('div'); fields.className='flex'; fields.style.marginTop='8px';
-      (block.fields||[]).forEach(f=>{
-        const inp=document.createElement('input'); inp.type='number'; inp.placeholder=f.ph;
-        const k=WKEY_FIELD(block.slug,f.k);
-        inp.value = localStorage.getItem(k)||'';
-        inp.onchange = ()=>{ if(inp.value==='') localStorage.removeItem(k); else localStorage.setItem(k,inp.value); recount(); scheduleSave(); };
-        fields.appendChild(inp);
+    if(ex.metrics){
+      ex.metrics.forEach((m,mi)=>{
+        const div=document.createElement('div'); div.style.marginTop='8px';
+        const label=document.createElement('div'); label.className='small'; label.textContent = m; div.appendChild(label);
+        const inp=document.createElement('input'); inp.type='text';
+        const key = `w:${ymd(today)}:metric:${ex.id}:${mi}`;
+        inp.value = map?.[key] ?? '';
+        inp.onchange = async ()=>{
+          const user=(await sb.auth.getUser()).data?.user; if(!user) return alert('Войдите');
+          const { data: remote } = await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd', ymd(today)).maybeSingle();
+          const existing = (remote && remote.data)?remote.data:{};
+          existing[key] = inp.value ? String(inp.value) : null;
+          Object.keys(existing).forEach(k=>{ if(existing[k]==null) delete existing[k]; });
+          if(Object.keys(existing).length===0) await sb.from('daily_data').delete().eq('user_id',user.id).eq('ymd', ymd(today));
+          else await sb.from('daily_data').upsert({ user_id:user.id, ymd: ymd(today), data: existing, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' });
+          await renderProgram();
+        };
+        div.appendChild(inp); card.appendChild(div);
       });
-      card.appendChild(fields);
     }
-
-    grid.appendChild(card);
+    programWrap.appendChild(card);
   });
-
-  // заметка
-  const note = document.getElementById('note');
-  note.value = localStorage.getItem(NOTE_KEY) || '';
-  note.onchange = ()=>{ if(note.value==='') localStorage.removeItem(NOTE_KEY); else localStorage.setItem(NOTE_KEY,note.value); scheduleSave(); };
-
-  recount();
 }
 
-function recount(){
-  // считаем подходы
-  let setsTot=0, setsDone=0, mTot=0, mDone=0;
-  (PLAN[weekday]||[]).forEach(b=>{
-    if(b.type==='sets' || b.type==='intervals'){
-      const n=(b.type==='sets')?b.sets:b.total;
-      for(let i=1;i<=n;i++){ setsTot++; if(localStorage.getItem(WKEY_SET(b.slug,i))==='1') setsDone++; }
-    }
-    if(b.fields){
-      b.fields.forEach(f=>{ mTot++; if((localStorage.getItem(WKEY_FIELD(b.slug,f.k))||'')!=='') mDone++; });
-    }
-  });
-  document.getElementById('setsTotal').textContent=String(setsTot);
-  document.getElementById('setsDone').textContent =String(setsDone);
-  document.getElementById('mTotal').textContent   =String(mTot);
-  document.getElementById('mDone').textContent    =String(mDone);
-
-  const pct = setsTot? Math.round(100*setsDone/setsTot) : 0;
-  document.getElementById('prog').value = pct;
-
-  // цель «Спорт дня выполнен»: только если все подходы закрыты
-  if(setsTot>0 && setsDone===setsTot){ localStorage.setItem(GOAL_SPORT,'1'); } else { localStorage.removeItem(GOAL_SPORT); }
-}
-
-/* кнопки */
-document.getElementById('completeAll').onclick=()=>{
-  (PLAN[weekday]||[]).forEach(b=>{
-    if(b.type==='sets' || b.type==='intervals'){
-      const n=(b.type==='sets')?b.sets:b.total;
-      for(let i=1;i<=n;i++) localStorage.setItem(WKEY_SET(b.slug,i),'1');
-    }
-  });
-  renderProgram(); scheduleSave();
-};
-document.getElementById('resetBtn').onclick=()=>{
-  (PLAN[weekday]||[]).forEach(b=>{
-    if(b.type==='sets' || b.type==='intervals'){
-      const n=(b.type==='sets')?b.sets:b.total;
-      for(let i=1;i<=n;i++) localStorage.removeItem(WKEY_SET(b.slug,i));
-    }
-    (b.fields||[]).forEach(f=> localStorage.removeItem(WKEY_FIELD(b.slug,f.k)));
-  });
-  localStorage.removeItem(NOTE_KEY);
-  localStorage.removeItem(GOAL_SPORT);
-  renderProgram(); scheduleSave();
-};
-
-/* ===== Supabase sync ===== */
-async function sbUser(){ const {data:{user}}=await sb.auth.getUser(); return user; }
-function collectForDay(){
-  const out={};
-  for(let i=0;i<localStorage.length;i++){
-    const k=localStorage.key(i); if(!k) continue;
-    if(k.startsWith(`workout:${dateStr}:`) || k===GOAL_SPORT) out[k]=localStorage.getItem(k);
-  }
-  return out;
-}
-function clearDailyFor(d){
-  const s = ymd(d);
-  const prefixes = [
-    `w:${s}:`,       // подходы и метрики этой страницы
-    `day:${s}:`,     // на всякий случай (если отмечаешь спорт отсюда)
-    `goal:${s}:`,
-    `n:${s}:`,
-    `state:${s}:`,
-    `metric:${s}:`,
-    `circ:${s}:`
-  ];
-  const toDelete = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (!k) continue;
-    if (prefixes.some(p => k.startsWith(p))) toDelete.push(k);
-  }
-  toDelete.forEach(k => localStorage.removeItem(k));
-}
-
-async function syncSave(){
-  const u=await sbUser(); if(!u) return;
-  const data=collectForDay();
-  if(Object.keys(data).length){
-    await sb.from('daily_data').upsert({user_id:u.id, ymd:dateStr, data, updated_at:new Date().toISOString()},{onConflict:'user_id,ymd'});
-  }
-}
-async function syncLoadFor(d){
-  const user = await sbGetUser();
-  if (!user) return;
-
-  const s = ymd(d);
-  const { data: row } = await sb
-    .from('daily_data')
-    .select('data')
-    .eq('user_id', user.id)
-    .eq('ymd', s)
-    .maybeSingle();
-
-  // 1) чистим локальные ключи за эту дату
-  clearDailyFor(d);
-
-  // 2) если облако что-то вернуло — применяем
-  if (row?.data) applyData(row.data);
-
-  render();
-}
-
-}
-let tmr; function scheduleSave(){ clearTimeout(tmr); tmr=setTimeout(syncSave,700); }
-document.getElementById('saveBtn').onclick=syncSave;
-
-/* magic-link: обмен кода на сессию и чистка URL (важно для GH Pages) */
-(async ()=>{
-  try{ try{ await sb.auth.exchangeCodeForSession(window.location.href); }catch(_){} 
-    if (/[?#].*(access_token|refresh_token|code)=/i.test(location.href)) {
-      const u=new URL(location.href); const base=`${u.origin}${u.pathname}`;
-      history.replaceState({},document.title,`${base}?date=${dateStr}`);
-    }
-  }catch{}
-})();
-
-renderProgram(); syncLoad();
+renderProgram();
 </script>
 </body>
 </html>
