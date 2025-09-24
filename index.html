@@ -3,202 +3,126 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Личный трекер</title>
+<title>Личный трекер — Главная</title>
 <style>
-  :root{
-    --bg:#0f172a; --card:#0d1320; --muted:#94a3b8; --text:#e6eef8;
-    --accent:#3b82f6; --warn:#f59e0b; --danger:#ef4444; --border:#1f2937;
-    --chip:#0b1222;
-    --plan-kcal:1950; --plan-prot:210; --plan-fat:55; --plan-carb:150;
-  }
-  [data-theme="light"]{
-    --bg:#f7fafc; --card:#ffffff; --muted:#4b5563; --text:#0f172a;
-    --accent:#2563eb; --warn:#d97706; --danger:#dc2626; --border:#e5e7eb; --chip:#eef2ff;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Arial}
-  /* header — НЕ фиксируется, обычный поток (скрывается при скролле) */
-  header{background:transparent;border-bottom:1px solid var(--border);padding:14px 0}
+  :root{--bg:#0f172a;--card:#0d1320;--muted:#94a3b8;--text:#e6eef8;--accent:#3b82f6;--danger:#ef4444;--border:#1f2937}
+  [data-theme="light"]{--bg:#f7fafc;--card:#fff;--muted:#374151;--text:#0f172a;--accent:#2563eb;--danger:#dc2626;--border:#e5e7eb}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui}
+  header{padding:12px 0;border-bottom:1px solid var(--border)}
   .wrap{max-width:980px;margin:0 auto;padding:12px}
   h1{margin:0;font-size:22px}
-  .sub{color:var(--muted);font-size:13px;margin-top:6px}
-  .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .sub{color:var(--muted);font-size:13px}
+  .flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .right{margin-left:auto}
-  .btn{padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--chip);color:var(--text);cursor:pointer;font-weight:700}
-  .btn.primary{background:var(--accent);color:#fff}
-  .btn.warn{background:var(--warn);color:#000}
-  .btn.ghost{background:transparent;border:1px dashed var(--border)}
-  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
-  .tab{min-width:94px;padding:10px 12px;border-radius:12px;background:var(--card);border:1px solid var(--border);cursor:pointer;font-weight:700;text-align:center}
-  .tab.active{outline:2px solid var(--accent);}
-
-  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin:12px 0}
-  .grid{display:grid;grid-template-columns:110px 1fr 44px;gap:10px;align-items:center}
+  .btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-weight:700}
+  .btn.primary{background:var(--accent);color:white}
+  .card{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:10px;margin-top:12px}
+  .grid{display:grid;grid-template-columns:110px 1fr 44px;gap:8px;align-items:center}
   .row{display:contents}
   .time{color:var(--muted);font-variant-numeric:tabular-nums}
   .label{font-size:15px}
-
-  input[type="number"], input[type="time"], input[type="email"], input[type="text"]{
-    font-size:15px;padding:8px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text);width:100%;max-width:160px;
-  }
-  textarea{width:100%;min-height:84px;padding:10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text)}
-
-  /* КБЖУ — двухколоночная сетка */
-  .meal-kbju{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start}
+  input,textarea,select{font-size:15px;padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text)}
+  .meal-kbju{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .kbju-field{display:flex;flex-direction:column;gap:6px}
-  .kbju-field label{font-size:13px;color:var(--muted)}
-  .kbju-field input{padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text)}
-
-  /* эмоции/состояние — эмодзи в одну строку */
-  .chips{display:flex;gap:8px;flex-wrap:nowrap;overflow:auto;padding-bottom:4px}
-  .chip{padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--chip);cursor:pointer;font-size:18px}
-  .chip.active{outline:2px solid var(--accent);}
-
+  .chips{display:flex;gap:8px;overflow:auto}
+  .chip{padding:8px 10px;border-radius:999px;border:1px solid var(--border);background:transparent;cursor:pointer}
   .small{font-size:13px;color:var(--muted)}
-  .kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  progress{width:100%;height:12px;border-radius:8px}
-
-  footer{padding:12px 0;text-align:center;color:var(--muted);font-size:13px}
-  @media(max-width:560px){
-    .wrap{padding:10px}
-    .grid{grid-template-columns:88px 1fr 36px;gap:8px}
-    .tab{min-width:84px;padding:8px 10px;font-size:13px}
-    .meal-kbju{grid-template-columns:1fr 1fr}
-  }
+  @media(max-width:560px){ .grid{grid-template-columns:88px 1fr 36px} }
 </style>
-<!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <header>
-    <div class="wrap">
-      <div class="flex" style="align-items:flex-start">
-        <div>
-          <h1>📅 Личный трекер</h1>
-          <div id="dateLine" class="sub">—</div>
-          <div class="flex" style="margin-top:8px">
-            <span class="btn ghost" id="sportPill">Спорт дня: —</span>
-            <span class="btn ghost" id="sleepPill">Сон: 22:30 → 06:00</span>
-            <span class="btn ghost">Цель веса: 80 кг</span>
-          </div>
-        </div>
-
-        <div class="flex right">
-          <button class="btn" id="themeBtn">🌙/☀️</button>
-          <button class="btn" id="exportBtn">Экспорт</button>
-          <label class="btn" for="importInput">Импорт<input id="importInput" type="file" accept="application/json" hidden></label>
-          <button class="btn warn" id="resetDayBtn">Сброс дня</button>
-          <button class="btn primary" id="saveNearBtn">Сохранить</button>
-          <a class="btn" id="chartsBtn" href="charts.html">Графики</a>
-        </div>
+<header>
+  <div class="wrap">
+    <div class="flex" style="justify-content:space-between;align-items:flex-start">
+      <div>
+        <h1>📅 Личный трекер</h1>
+        <div id="dateLine" class="sub">—</div>
       </div>
-
-      <div id="authBox" class="flex" style="margin-top:10px;align-items:center">
-        <input id="emailInput" type="email" placeholder="email (для входа по ссылке)">
-        <button class="btn" id="loginBtn">Войти</button>
-        <button class="btn" id="logoutBtn" style="display:none">Выйти</button>
-        <div id="whoami" class="sub" style="margin-left:8px"></div>
-      </div>
-
-      <div class="tabs" id="dayTabs" style="margin-top:12px"></div>
-      <div class="flex" style="margin-top:8px;gap:8px">
-        <button class="btn" id="prevWeekBtn">⟵ Неделя</button>
-        <div class="btn ghost" id="weekLabel">Неделя —</div>
-        <button class="btn" id="nextWeekBtn">Неделя ⟶</button>
+      <div class="flex right">
+        <button id="themeBtn" class="btn">🌙/☀️</button>
+        <button id="saveAllBtn" class="btn primary">Сохранить</button>
+        <button id="exportBtn" class="btn">Экспорт</button>
+        <label class="btn"><input id="importInput" type="file" accept="application/json" style="display:none">Импорт</label>
+        <a class="btn" href="workout.html">Тренировка</a>
+        <a class="btn" href="charts.html">Графики</a>
       </div>
     </div>
-  </header>
 
-  <main class="wrap">
-    <section class="kpi">
-      <div class="card">
-        <div class="small">Выполнено сегодня</div>
-        <div style="font-size:22px;font-weight:800" id="doneToday">0%</div>
-        <progress id="progToday" max="100" value="0"></progress>
-      </div>
-      <div class="card">
-        <div class="small">Недельный прогресс</div>
-        <div style="font-size:22px;font-weight:800" id="doneWeek">0%</div>
-        <progress id="progWeek" max="100" value="0"></progress>
-      </div>
-    </section>
+    <div id="authBox" class="flex" style="margin-top:10px;align-items:center">
+      <input id="emailInput" type="email" placeholder="Email для входа (magic link)" style="max-width:320px">
+      <button id="loginBtn" class="btn">Войти</button>
+      <button id="logoutBtn" class="btn" style="display:none">Выйти</button>
+      <div id="whoami" class="sub" style="margin-left:8px"></div>
+    </div>
+    <div class="flex" style="margin-top:10px;gap:8px">
+      <button class="btn" id="prevWeekBtn">⟵ Неделя</button>
+      <div class="btn" id="weekLabel">Неделя —</div>
+      <button class="btn" id="nextWeekBtn">Неделя ⟶</button>
+    </div>
+  </div>
+</header>
 
-    <section class="card">
-      <h3 style="margin-top:0">Будний день — расписание</h3>
-      <div class="grid" id="scheduleGrid"></div>
-    </section>
+<main class="wrap">
+  <section class="card">
+    <h3 style="margin:0">План дня</h3>
+    <div id="scheduleGrid" class="grid" style="margin-top:10px"></div>
+  </section>
 
-    <section class="card">
-      <h3 style="margin-top:0">🍴 Питание за день</h3>
-      <div id="nutritionArea"></div>
-      <div class="small" style="margin-top:8px">План на день: калории ≈ <b id="planKcal">1950</b> ккал, Б <b id="planProt">210</b> г, Ж <b id="planFat">55</b> г, У <b id="planCarb">150</b> г. Цвет итога по калориям: &gt;2000 — <b style="color:var(--danger)">красный</b>, &lt;1500 — <b style="color:#2563eb">синий</b>.</div>
-    </section>
+  <section class="card">
+    <h3 style="margin:0">Питание</h3>
+    <div id="nutritionArea"></div>
+    <div id="nutritionTotals" style="margin-top:8px" class="small"></div>
+    <div class="small" style="margin-top:8px">План: Калории ≈1950 ккал, Белки 210 г, Жиры 55 г, Углеводы 150 г. Итог окрашивается: &gt;2000 — красным, &lt;1500 — синим.</div>
+  </section>
 
-    <section class="card">
-      <h3 style="margin-top:0">Ежедневные цели</h3>
-      <div id="dailyGoals"></div>
-    </section>
+  <section class="card">
+    <h3 style="margin:0">Ежедневные цели</h3>
+    <div id="dailyGoals" style="margin-top:8px"></div>
+  </section>
 
-    <section class="card" id="weeklySection">
-      <h3 style="margin-top:0">Итоги недели</h3>
-      <div id="weeklyGoals"></div>
-      <div class="small" style="margin-top:8px">Неделя ISO (пн–вс). «Сброс дня» чистит текущий день (расписание, цели, питание, замеры).</div>
-    </section>
+  <section class="card" id="weeklySection">
+    <h3 style="margin:0">Итоги недели</h3>
+    <div id="weeklyGoals" style="margin-top:8px"></div>
+  </section>
 
-    <section class="card">
-      <h3 style="margin-top:0">Состояние за день</h3>
-      <div id="stateGrid"></div>
-      <div class="small" style="margin-top:8px">Выбери по шкале от 1 до 5: 1 — плохо, 5 — отлично.</div>
-    </section>
+  <section class="card">
+    <h3 style="margin:0">Состояние</h3>
+    <div id="stateGrid" style="margin-top:8px"></div>
+  </section>
 
-    <section class="card">
-      <h3 style="margin-top:0">Здоровье (утро)</h3>
-      <div id="healthGrid"></div>
-    </section>
-  </main>
+  <section class="card">
+    <h3 style="margin:0">Здоровье</h3>
+    <div id="healthGrid" style="margin-top:8px"></div>
+  </section>
+</main>
 
-  <footer>
-    <div class="small">Сайт — локальный трекер. Данные сохраняются локально и синхронизируются с Supabase после входа.</div>
-  </footer>
+<footer class="wrap small" style="margin-bottom:24px">
+  Данные хранятся только в Supabase. Локально сохраняется только тема.
+</footer>
 
 <script>
-/* ================= CONFIG ===================
-   Если нужно — замените URL/KEY на ваши.
-   (Вы давали эти значения ранее — оставил их)
-=============================================*/
+/* ============ Supabase config (подставлены ваши значения) ============ */
 const SUPABASE_URL = "https://afxbyrypaqnobaalipjm.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_vROzTIfTCdtiea3xfMCcHA_bthD-zZr";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+/* =================================================================== */
 
-/* ================ DATES / HELPERS ================= */
-const pad = n => String(n).padStart(2,'0');
-const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-function isoWeek(d){
-  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const day = (t.getUTCDay()+6)%7;
-  t.setUTCDate(t.getUTCDate()-day+3);
-  const first = new Date(Date.UTC(t.getUTCFullYear(),0,4));
-  const w = 1 + Math.round(((t-first)/86400000-3+((first.getUTCDay()+6)%7))/7);
-  return `${t.getUTCFullYear()}-W${pad(w)}`;
-}
-function startOfISOWeek(d){
-  const t = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const day = (t.getDay()+6)%7;
-  t.setDate(t.getDate()-day);
-  t.setHours(0,0,0,0);
-  return t;
-}
+/* ============ Helpers & Dates ============ */
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+function isoWeek(d){ const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-day+3); const first=new Date(Date.UTC(t.getUTCFullYear(),0,4)); const w=1+Math.round(((t-first)/86400000-3+((first.getUTCDay()+6)%7))/7); return `${t.getUTCFullYear()}-W${pad(w)}`;}
+function startOfISOWeek(d){ const t=new Date(d.getFullYear(),d.getMonth(),d.getDate()); const day=(t.getDay()+6)%7; t.setDate(t.getDate()-day); t.setHours(0,0,0,0); return t;}
 function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
 
-/* ================ STATE ================= */
-const DAYS_FULL = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
 const today = new Date();
-let viewWeekStart = startOfISOWeek(today); // start of current view week (Mon)
-let currentDay = (today.getDay()+6)%7;      // 0..6 where 0=Mon
-function getViewDate(){ return addDays(viewWeekStart, currentDay); }
+let viewWeekStart = startOfISOWeek(today);
+let currentDay = (today.getDay()+6)%7;
+function getViewDate(){ return addDays(viewWeekStart,currentDay); }
 
-/* ================ DATA / PLANS ================= */
-const baseDay = [
+/* ============ Templates ============ */
+const DAYS_FULL=['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
+const baseDay=[
   ['05:30–06:00','Подъём, вода, дыхание, зарядка'],
   ['06:00–07:00','Спорт'],
   ['07:00–07:30','Завтрак (белок + овощи)'],
@@ -214,63 +138,55 @@ const baseDay = [
   ['22:00–22:30','Вечерний ритуал, душ'],
   ['22:30–06:00','Сон']
 ];
-const sportPlan = {
-  0:'Силовая дома',1:'Бег улица',2:'Силовая улица',3:'Бег улица',4:'Силовая дома',5:'Силовая улица',6:'Футбол'
-};
-const goalsDaily  = ['7+ часов сна','Duolingo 15–30 мин','Аудио в дороге (утро/вечер)','20+ страниц книги','Питание по плану','Спорт дня выполнен'];
-const goalsWeekly = ['5+ тренировок/активностей','2× силовые','2× футбол','2× бег (интервалы/длинный)','7× Duolingo','7× 20+ страниц книги','План недели составлен'];
+const sportPlan = {0:'Силовая дома',1:'Бег улица',2:'Силовая улица',3:'Бег улица',4:'Силовая дома',5:'Силовая улица',6:'Футбол'};
+const MEALS=['Завтрак','Обед','Ужин','Перекусы'];
+const N_FIELDS=['Калории (ккал)','Белки (г)','Жиры (г)','Углеводы (г)'];
+const goalsDaily=['7+ часов сна','Duolingo 15–30 мин','Аудио в дороге','20+ страниц книги','Питание по плану','Спорт дня выполнен'];
+const goalsWeekly=['5+ тренировок','2× силовые','2× футбол','2× бег','7× Duolingo','7× чтение','План недели'];
 
-const MEALS = ['Завтрак','Обед','Ужин','Перекусы'];
-const N_FIELDS = ['Калории (ккал)','Белки (г)','Жиры (г)','Углеводы (г)'];
-
-const PLAN = {
-  'Калории (ккал)': Number(getComputedStyle(document.documentElement).getPropertyValue('--plan-kcal')) || 1950,
-  'Белки (г)': Number(getComputedStyle(document.documentElement).getPropertyValue('--plan-prot')) || 210,
-  'Жиры (г)': Number(getComputedStyle(document.documentElement).getPropertyValue('--plan-fat')) || 55,
-  'Углеводы (г)': Number(getComputedStyle(document.documentElement).getPropertyValue('--plan-carb')) || 150
-};
-
-/* ================ KEYS ================= */
-const DAY_KEY  = (d,i)=>`day:${ymd(d)}:${i}`;
-const GOAL_KEY = (d,i)=>`goal:${ymd(d)}:${i}`;
-const WEEK_KEY = (w,i)=>`wgoal:${w}:${i}`;
-const NF_KEY   = (d,meal,field)=>`n:${ymd(d)}:${meal}:${field}`;
-const STATE_KEY= (d,t)=>`state:${ymd(d)}:${t}`; // mood|body
-const METRIC_KEY = (d,k)=>`metric:${ymd(d)}:${k}`; // e.g. weight
-const CIRC_KEY = (d,k)=>`circ:${ymd(d)}:${k}`; // waist/biceps/quad
-
-/* ================ DOM refs ================= */
-const tabs = document.getElementById('dayTabs');
+/* ============ DOM refs ============ */
 const dateLine = document.getElementById('dateLine');
-const weekLabel = document.getElementById('weekLabel');
 const scheduleGrid = document.getElementById('scheduleGrid');
 const nutritionArea = document.getElementById('nutritionArea');
-const totalsArea = document.createElement('div');
+const nutritionTotals = document.getElementById('nutritionTotals');
 const dailyGoalsDiv = document.getElementById('dailyGoals');
 const weeklyGoalsDiv = document.getElementById('weeklyGoals');
 const stateGrid = document.getElementById('stateGrid');
 const healthGrid = document.getElementById('healthGrid');
-const sportPill = document.getElementById('sportPill');
-const sleepPill = document.getElementById('sleepPill');
+const weekLabel = document.getElementById('weekLabel');
 
-document.getElementById('planKcal').textContent = PLAN['Калории (ккал)'];
-document.getElementById('planProt').textContent = PLAN['Белки (г)'];
-document.getElementById('planFat').textContent = PLAN['Жиры (г)'];
-document.getElementById('planCarb').textContent = PLAN['Углеводы (г)'];
+/* ============ Auth UI ============ */
+const emailInput = document.getElementById('emailInput');
+const loginBtn = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const whoami = document.getElementById('whoami');
+const saveAllBtn = document.getElementById('saveAllBtn');
 
-/* ================ UTILS ================= */
-const getNum = k => parseInt(localStorage.getItem(k) || 0);
-const setNum = (k,v) => { if(v===0||v===''||v==null) localStorage.removeItem(k); else localStorage.setItem(k,String(v)); };
-const setVal = (k,v) => { if(v==null||v==='') localStorage.removeItem(k); else localStorage.setItem(k,String(v)); };
+loginBtn.onclick = async ()=>{
+  const email = emailInput.value.trim(); if(!email) return alert('Введите email');
+  const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.href } });
+  if(error) alert('Ошибка: '+error.message); else alert('Письмо отправлено. Откройте ссылку в браузере для входа.');
+};
 
-/* ================ RENDER TABS ================= */
+logoutBtn.onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
+
+/* ============ UI helpers ============ */
+function makeRow(time,label,checked,onchange,key){
+  const t=document.createElement('div'); t.className='row';
+  const c1=document.createElement('div'); c1.className='time'; c1.textContent=time; t.appendChild(c1);
+  const c2=document.createElement('div'); c2.className='label'; c2.textContent=label; t.appendChild(c2);
+  const c3=document.createElement('div'); const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=checked; cb.onchange=()=>onchange(cb.checked); c3.appendChild(cb); cb.setAttribute('data-key',key); t.appendChild(c3);
+  return t;
+}
+
+/* ============ Renderers ============ */
+/* Cloud-first: render UI using dataMap (map from cloud row.data) */
 function renderTabs(){
+  const tabs = document.getElementById('dayTabs') || document.createElement('div');
   tabs.innerHTML = '';
   DAYS_FULL.forEach((name,i)=>{
-    const b = document.createElement('button');
-    b.className = 'tab' + (i===currentDay ? ' active' : '');
-    b.textContent = name;
-    b.onclick = ()=>{ currentDay = i; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); b.classList.add('active'); renderAll(); syncLoadFor(getViewDate()); };
+    const b=document.createElement('button'); b.className='tab'+(i===currentDay?' active':''); b.textContent=name;
+    b.onclick=()=>{ currentDay=i; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); b.classList.add('active'); renderAll(); };
     tabs.appendChild(b);
   });
   const vd = getViewDate();
@@ -278,459 +194,263 @@ function renderTabs(){
   weekLabel.textContent = `Неделя ${isoWeek(vd)}`;
 }
 
-/* ================ SCHEDULE ================= */
-function makeRow(time,label,checked,onchange,key){
-  const t = document.createElement('div'); t.className='row';
-  const c1 = document.createElement('div'); c1.className='time'; c1.textContent = time; t.appendChild(c1);
-  const c2 = document.createElement('div'); c2.className='label'; c2.textContent = label; t.appendChild(c2);
-  const c3 = document.createElement('div');
-  const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = checked;
-  cb.onchange = ()=> { onchange(cb.checked); };
-  c3.appendChild(cb);
-  cb.setAttribute('data-key',key);
-  t.appendChild(c3);
-  return t;
-}
-
-function renderSchedule(){
-  scheduleGrid.innerHTML = '';
-  const vd = getViewDate();
-  sportPill.textContent = `Спорт дня: ${sportPlan[currentDay] || '—'}`;
-  baseDay.forEach((it, idx)=>{
-    const key = DAY_KEY(vd, idx);
-    const saved = localStorage.getItem(key) === '1';
-    const row = makeRow(it[0], it[1], saved, val => { localStorage.setItem(key, val ? '1' : '0'); updateProgress(); scheduleSave(); }, key);
+async function renderSchedule(dataMap){
+  scheduleGrid.innerHTML=''; const vd=getViewDate();
+  sportPlan && (document.getElementById('sportPill') && (document.getElementById('sportPill').textContent=`Спорт дня: ${sportPlan[currentDay]}`));
+  baseDay.forEach((it,idx)=>{
+    const key = `day:${ymd(vd)}:${idx}`;
+    const checked = dataMap?.[key] === '1';
+    const row = makeRow(it[0], it[1], checked, async (val)=>{
+      const user = (await sb.auth.getUser()).data?.user; if(!user) return alert('Войдите');
+      const date = ymd(vd);
+      const { data: remote } = await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd',date).maybeSingle();
+      const existing = (remote && remote.data) ? remote.data : {};
+      existing[key] = val ? '1' : null;
+      Object.keys(existing).forEach(k=>{ if(existing[k]==null) delete existing[k]; });
+      if(Object.keys(existing).length===0) await sb.from('daily_data').delete().eq('user_id',user.id).eq('ymd',date);
+      else await sb.from('daily_data').upsert({ user_id:user.id, ymd:date, data: existing, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' });
+      await syncLoadFor(vd);
+    }, key);
     scheduleGrid.appendChild(row);
   });
 }
 
-/* ================ DAILY & WEEKLY GOALS ================= */
-function renderDailyGoals(){
-  dailyGoalsDiv.innerHTML = '';
-  const vd = getViewDate();
-  goalsDaily.forEach((lab, idx)=>{
-    const key = GOAL_KEY(vd, idx);
-    const saved = localStorage.getItem(key) === '1';
-    const row = makeRow('—', lab, saved, val=>{ localStorage.setItem(key, val ? '1' : '0'); updateProgress(); scheduleSave(); }, key);
+function renderNutrition(dataMap){
+  nutritionArea.innerHTML='';
+  const vd=getViewDate();
+  const header=document.createElement('div'); header.className='row'; header.innerHTML='<div class="time">Приём</div><div class="label">КБЖУ</div><div></div>'; nutritionArea.appendChild(header);
+  MEALS.forEach(meal=>{
+    const row=document.createElement('div'); row.className='row';
+    const c1=document.createElement('div'); c1.className='time'; c1.textContent=meal; row.appendChild(c1);
+    const c2=document.createElement('div'); c2.className='label';
+    const grid=document.createElement('div'); grid.className='meal-kbju';
+    N_FIELDS.forEach(field=>{
+      const fld=document.createElement('div'); fld.className='kbju-field';
+      const lbl=document.createElement('label'); lbl.textContent=field.split(' ')[0];
+      const inp=document.createElement('input'); inp.type='number'; inp.placeholder='0';
+      const key = `n:${ymd(vd)}:${meal}:${field}`;
+      inp.value = dataMap?.[key] ?? '';
+      inp.onchange = async ()=>{
+        const user = (await sb.auth.getUser()).data?.user; if(!user) return alert('Войдите');
+        const date=ymd(vd);
+        const { data: remote } = await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd',date).maybeSingle();
+        const existing = (remote && remote.data) ? remote.data : {};
+        existing[key] = inp.value ? String(inp.value) : null;
+        Object.keys(existing).forEach(k=>{ if(existing[k]==null) delete existing[k]; });
+        if(Object.keys(existing).length===0) await sb.from('daily_data').delete().eq('user_id',user.id).eq('ymd',date);
+        else await sb.from('daily_data').upsert({ user_id:user.id, ymd:date, data: existing, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' });
+        await syncLoadFor(vd);
+      };
+      fld.appendChild(lbl); fld.appendChild(inp); grid.appendChild(fld);
+    });
+    c2.appendChild(grid); row.appendChild(c2); row.appendChild(document.createElement('div')); nutritionArea.appendChild(row);
+  });
+  renderNutritionTotals(dataMap);
+}
+function renderNutritionTotals(dataMap){
+  const vd=getViewDate();
+  const sums={'Калории (ккал)':0,'Белки (г)':0,'Жиры (г)':0,'Углеводы (г)':0};
+  MEALS.forEach(m=>N_FIELDS.forEach(f=>{ const v=dataMap?.[`n:${ymd(vd)}:${m}:${f}`]; sums[f]+= v ? Number(v) : 0; }));
+  nutritionTotals.textContent = `Итого: ${sums['Калории (ккал)']} ккал • Б ${sums['Белки (г)']} г • Ж ${sums['Жиры (г)']} г • У ${sums['Углеводы (г)']} г`;
+  if(sums['Калории (ккал)']>2000) nutritionTotals.style.color='var(--danger)';
+  else if(sums['Калории (ккал)']<1500) nutritionTotals.style.color='#2563eb';
+  else nutritionTotals.style.color='';
+}
+
+function renderDailyGoals(dataMap){
+  dailyGoalsDiv.innerHTML='';
+  const vd=getViewDate();
+  goalsDaily.forEach((lab,idx)=>{
+    const key = `goal:${ymd(vd)}:${idx}`; const checked = dataMap?.[key] === '1';
+    const row = makeRow('—', lab, checked, async (val)=>{
+      const user=(await sb.auth.getUser()).data?.user; if(!user) return alert('Войдите');
+      const date=ymd(vd); const { data: remote } = await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd',date).maybeSingle();
+      const existing=(remote && remote.data)?remote.data:{};
+      existing[key]=val? '1':null; Object.keys(existing).forEach(k=>{ if(existing[k]==null) delete existing[k]; });
+      if(Object.keys(existing).length===0) await sb.from('daily_data').delete().eq('user_id',user.id).eq('ymd',date);
+      else await sb.from('daily_data').upsert({ user_id:user.id, ymd:date, data:existing, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' });
+      await syncLoadFor(vd);
+    }, key);
     dailyGoalsDiv.appendChild(row);
   });
 }
 
-function renderWeeklyGoals(){
-  weeklyGoalsDiv.innerHTML = '';
-  const vd = getViewDate();
-  const w = isoWeek(vd);
-  goalsWeekly.forEach((lab, idx)=>{
-    const key = WEEK_KEY(w, idx);
-    const saved = localStorage.getItem(key) === '1';
-    const row = makeRow('Неделя', lab, saved, val=>{ localStorage.setItem(key, val ? '1' : '0'); updateProgress(); scheduleSave(); }, key);
+function renderWeeklyGoals(dataMap){
+  weeklyGoalsDiv.innerHTML=''; const vd=getViewDate(); const w=isoWeek(vd);
+  goalsWeekly.forEach((lab,idx)=>{
+    const key = `wgoal:${w}:${idx}`; const checked = dataMap?.[key] === '1';
+    const row = makeRow('Неделя', lab, checked, async (val)=>{
+      const user=(await sb.auth.getUser()).data?.user; if(!user) return alert('Войдите');
+      const { data: remote } = await sb.from('weekly_data').select('data').eq('user_id',user.id).eq('week_id',w).maybeSingle();
+      const existing=(remote && remote.data)?remote.data:{};
+      existing[key]=val?'1':null; Object.keys(existing).forEach(k=>{ if(existing[k]==null) delete existing[k]; });
+      if(Object.keys(existing).length===0) await sb.from('weekly_data').delete().eq('user_id',user.id).eq('week_id',w);
+      else await sb.from('weekly_data').upsert({ user_id:user.id, week_id:w, data:existing, updated_at:new Date().toISOString() }, { onConflict:'user_id,week_id' });
+      await syncLoadFor(vd);
+    }, key);
     weeklyGoalsDiv.appendChild(row);
   });
 }
 
-/* ================ PROGRESS ================= */
-function updateProgress(){
-  const vd = getViewDate();
-  let dayTotal = baseDay.length + goalsDaily.length;
-  let done = 0;
-  for(let i=0;i<baseDay.length;i++) if(localStorage.getItem(DAY_KEY(vd,i))==='1') done++;
-  for(let i=0;i<goalsDaily.length;i++) if(localStorage.getItem(GOAL_KEY(vd,i))==='1') done++;
-  const dp = Math.round(100 * done / Math.max(1, dayTotal));
-  document.getElementById('doneToday').textContent = dp + '%';
-  document.getElementById('progToday').value = dp;
-
-  const w = isoWeek(vd);
-  let wDone = 0;
-  for(let i=0;i<goalsWeekly.length;i++) if(localStorage.getItem(WEEK_KEY(w,i))==='1') wDone++;
-  const wp = Math.round(100 * wDone / Math.max(1, goalsWeekly.length));
-  document.getElementById('doneWeek').textContent = wp + '%';
-  document.getElementById('progWeek').value = wp;
-}
-
-/* ================ NUTRITION ================= */
-function renderNutrition(){
-  nutritionArea.innerHTML = '';
-  const vd = getViewDate();
-
-  // header row
-  const header = document.createElement('div'); header.className='row';
-  header.innerHTML = '<div class="time">Приём</div><div class="label">КБЖУ</div><div></div>';
-  nutritionArea.appendChild(header);
-
-  MEALS.forEach(meal=>{
-    const row = document.createElement('div'); row.className='row';
-    const c1 = document.createElement('div'); c1.className='time'; c1.textContent = meal; row.appendChild(c1);
-
-    const c2 = document.createElement('div'); c2.className='label';
-    const gridWrap = document.createElement('div'); gridWrap.className='meal-kbju';
-
-    // Калории
-    const boxCal = document.createElement('div'); boxCal.className='kbju-field';
-    const lblC = document.createElement('label'); lblC.textContent='Калории:';
-    const inpC = document.createElement('input'); inpC.type='number'; inpC.min=0; inpC.placeholder='0';
-    const keyC = NF_KEY(vd, meal, 'Калории (ккал)');
-    inpC.value = localStorage.getItem(keyC) || '';
-    inpC.onchange = ()=>{ setNum(keyC, parseInt(inpC.value||0)); renderTotals(); scheduleSave(); };
-    boxCal.appendChild(lblC); boxCal.appendChild(inpC);
-    gridWrap.appendChild(boxCal);
-
-    // Белки
-    const boxP = document.createElement('div'); boxP.className='kbju-field';
-    const lblP = document.createElement('label'); lblP.textContent='Белки:';
-    const inpP = document.createElement('input'); inpP.type='number'; inpP.min=0; inpP.placeholder='0';
-    const keyP = NF_KEY(vd, meal, 'Белки (г)');
-    inpP.value = localStorage.getItem(keyP) || '';
-    inpP.onchange = ()=>{ setNum(keyP, parseInt(inpP.value||0)); renderTotals(); scheduleSave(); };
-    boxP.appendChild(lblP); boxP.appendChild(inpP);
-    gridWrap.appendChild(boxP);
-
-    // Жиры
-    const boxF = document.createElement('div'); boxF.className='kbju-field';
-    const lblF = document.createElement('label'); lblF.textContent='Жиры:';
-    const inpF = document.createElement('input'); inpF.type='number'; inpF.min=0; inpF.placeholder='0';
-    const keyF = NF_KEY(vd, meal, 'Жиры (г)');
-    inpF.value = localStorage.getItem(keyF) || '';
-    inpF.onchange = ()=>{ setNum(keyF, parseInt(inpF.value||0)); renderTotals(); scheduleSave(); };
-    boxF.appendChild(lblF); boxF.appendChild(inpF);
-    gridWrap.appendChild(boxF);
-
-    // Углеводы
-    const boxU = document.createElement('div'); boxU.className='kbju-field';
-    const lblU = document.createElement('label'); lblU.textContent='Углеводы:';
-    const inpU = document.createElement('input'); inpU.type='number'; inpU.min=0; inpU.placeholder='0';
-    const keyU = NF_KEY(vd, meal, 'Углеводы (г)');
-    inpU.value = localStorage.getItem(keyU) || '';
-    inpU.onchange = ()=>{ setNum(keyU, parseInt(inpU.value||0)); renderTotals(); scheduleSave(); };
-    boxU.appendChild(lblU); boxU.appendChild(inpU);
-    gridWrap.appendChild(boxU);
-
-    c2.appendChild(gridWrap);
-    row.appendChild(c2);
-    row.appendChild(document.createElement('div')); // empty column
-    nutritionArea.appendChild(row);
+const stateOptions=[{v:1,label:'😖'},{v:2,label:'😕'},{v:3,label:'😐'},{v:4,label:'🙂'},{v:5,label:'😄'}];
+function renderStates(dataMap){
+  stateGrid.innerHTML=''; const vd=getViewDate();
+  ['mood','body'].forEach(type=>{
+    const box=document.createElement('div'); box.style.margin='8px 0';
+    const title=document.createElement('div'); title.className='small'; title.textContent = type==='mood' ? 'Эмоционально' : 'Физически';
+    box.appendChild(title);
+    const chips=document.createElement('div'); chips.className='chips';
+    stateOptions.forEach(opt=>{
+      const b=document.createElement('button'); b.className='chip'; b.textContent=opt.label;
+      const key=`state:${ymd(vd)}:${type}`;
+      if(dataMap?.[key]==String(opt.v)) b.style.outline='2px solid var(--accent)';
+      b.onclick=async ()=>{
+        const user=(await sb.auth.getUser()).data?.user; if(!user) return alert('Войдите');
+        const date=ymd(vd); const { data: remote } = await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd',date).maybeSingle();
+        const existing=(remote && remote.data)?remote.data:{};
+        existing[key]=String(opt.v); Object.keys(existing).forEach(k=>{ if(existing[k]==null) delete existing[k]; });
+        if(Object.keys(existing).length===0) await sb.from('daily_data').delete().eq('user_id',user.id).eq('ymd',date);
+        else await sb.from('daily_data').upsert({ user_id:user.id, ymd:date, data:existing, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' });
+        await syncLoadFor(vd);
+      };
+      chips.appendChild(b);
+    });
+    box.appendChild(chips); stateGrid.appendChild(box);
   });
-
-  // totals
-  const totalsCard = document.createElement('div'); totalsCard.className='card'; totalsCard.style.marginTop='8px';
-  totalsCard.appendChild(totalsArea);
-  nutritionArea.appendChild(totalsCard);
-  renderTotals();
 }
 
-function renderTotals(){
-  totalsArea.innerHTML = '';
-  const vd = getViewDate();
-  const sums = {'Калории (ккал)':0,'Белки (г)':0,'Жиры (г)':0,'Углеводы (г)':0};
-  MEALS.forEach(m => N_FIELDS.forEach(f => sums[f] += getNum(NF_KEY(vd,m,f))));
-  N_FIELDS.forEach(field=>{
-    const row = document.createElement('div'); row.className='row';
-    const c1 = document.createElement('div'); c1.className='time';
-    // show plan in header row text
-    if(field==='Калории (ккал)') c1.textContent = `${field} (≈${PLAN[field]} ккал)`;
-    else c1.textContent = `${field.split(' ')[0]} (${PLAN[field]} г)`;
-    row.appendChild(c1);
-    const c2 = document.createElement('div'); c2.className='label'; c2.textContent = String(sums[field]);
-    if(field==='Калории (ккал)') c2.style.color = (sums[field] > 2000) ? 'var(--danger)' : (sums[field] < 1500 ? '#2563eb' : 'inherit');
-    row.appendChild(c2);
-    row.appendChild(document.createElement('div'));
-    totalsArea.appendChild(row);
-  });
-  const info = document.createElement('div'); info.className='small'; info.style.marginTop='8px';
-  info.textContent = `План на день: калории ≈ ${PLAN['Калории (ккал)']}, Б ${PLAN['Белки (г)']} г, Ж ${PLAN['Жиры (г)']} г, У ${PLAN['Углеводы (г)']} г.`;
-  totalsArea.appendChild(info);
-}
+function renderHealth(dataMap){
+  healthGrid.innerHTML=''; const vd=getViewDate();
+  // weight daily
+  const row=document.createElement('div'); row.className='row';
+  const t=document.createElement('div'); t.className='time'; t.textContent='Вес (кг)'; row.appendChild(t);
+  const c=document.createElement('div'); c.className='label';
+  const inp=document.createElement('input'); inp.type='number'; inp.step='0.1'; inp.value = dataMap?.[`metric:${ymd(vd)}:weight`] ?? '';
+  inp.onchange = async ()=>{
+    const user=(await sb.auth.getUser()).data?.user; if(!user) return alert('Войдите');
+    const date=ymd(vd);
+    const { data: remote } = await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd',date).maybeSingle();
+    const existing=(remote && remote.data)?remote.data:{};
+    existing[`metric:${date}:weight`] = inp.value ? String(inp.value) : null;
+    Object.keys(existing).forEach(k=>{ if(existing[k]==null) delete existing[k]; });
+    if(Object.keys(existing).length===0) await sb.from('daily_data').delete().eq('user_id',user.id).eq('ymd',date);
+    else await sb.from('daily_data').upsert({ user_id:user.id, ymd:date, data:existing, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' });
+    await syncLoadFor(vd);
+  };
+  c.appendChild(inp); row.appendChild(c); row.appendChild(document.createElement('div')); healthGrid.appendChild(row);
 
-/* ================ STATE (эмо, физ) ================= */
-const stateOptions = [
-  {v:1,label:'😖 1'},{v:2,label:'😕 2'},{v:3,label:'😐 3'},{v:4,label:'🙂 4'},{v:5,label:'😄 5'}
-];
-function renderStateRow(title,type){
-  const vd = getViewDate();
-  const box = document.createElement('div'); box.style.margin='8px 0';
-  const h = document.createElement('div'); h.className='small'; h.textContent = title; box.appendChild(h);
-  const wrap = document.createElement('div'); wrap.className='chips';
-  const saved = parseInt(localStorage.getItem(STATE_KEY(vd,type))||0);
-  stateOptions.forEach(opt=>{
-    const b = document.createElement('button'); b.type='button'; b.className='chip'+(saved===opt.v?' active':''); b.textContent=opt.label;
-    b.onclick = ()=>{ localStorage.setItem(STATE_KEY(vd,type), String(opt.v)); renderStates(); scheduleSave(); };
-    wrap.appendChild(b);
-  });
-  box.appendChild(wrap);
-  return box;
-}
-function renderStates(){ stateGrid.innerHTML=''; stateGrid.appendChild(renderStateRow('Эмоционально','mood')); stateGrid.appendChild(renderStateRow('Физически','body')); }
-
-/* ================ HEALTH ================= */
-/* вес — ежедневно; обмеры — только в воскресенье */
-function renderHealth(){
-  healthGrid.innerHTML = '';
-  const vd = getViewDate();
-  // weight
-  const rW = document.createElement('div'); rW.className='row';
-  rW.innerHTML = `<div class="time">Вес (кг)</div>`;
-  const cW = document.createElement('div'); cW.className='label';
-  const inpW = document.createElement('input'); inpW.type='number'; inpW.step='0.1'; inpW.placeholder='кг';
-  const kW = METRIC_KEY(vd,'weight');
-  inpW.value = localStorage.getItem(kW) || '';
-  inpW.onchange = ()=>{ setVal(kW, inpW.value||''); scheduleSave(); renderHealthWeeklyCard(); };
-  cW.appendChild(inpW); rW.appendChild(cW); rW.appendChild(document.createElement('div')); healthGrid.appendChild(rW);
-
-  // If Sunday (getDay() === 0)
+  // Sunday circumferences
   const isSunday = getViewDate().getDay()===0;
   if(isSunday){
     ['waist','biceps','quad'].forEach(k=>{
-      const r = document.createElement('div'); r.className='row';
-      r.innerHTML = `<div class="time">${k==='waist'?'Объем живота':k==='biceps'?'Объём бицепса':'Объём квадрицепса'}</div>`;
-      const c = document.createElement('div'); c.className='label';
-      const inp = document.createElement('input'); inp.type='number'; inp.step='0.1'; inp.placeholder='см';
-      const key = CIRC_KEY(vd,k);
-      inp.value = localStorage.getItem(key) || '';
-      inp.onchange = ()=>{ setVal(key, inp.value||''); scheduleSave(); renderHealthWeeklyCard(); };
-      c.appendChild(inp); r.appendChild(c); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
+      const r=document.createElement('div'); r.className='row';
+      const tt=document.createElement('div'); tt.className='time'; tt.textContent = k==='waist'?'Объем живота':k==='biceps'?'Объём бицепса':'Объём квадрицепса';
+      r.appendChild(tt);
+      const cc=document.createElement('div'); cc.className='label';
+      const ii=document.createElement('input'); ii.type='number'; ii.step='0.1'; ii.value = dataMap?.[`circ:${ymd(vd)}:${k}`] ?? '';
+      ii.onchange = async ()=>{
+        const user=(await sb.auth.getUser()).data?.user; if(!user) return alert('Войдите');
+        const date=ymd(vd);
+        const { data: remote } = await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd',date).maybeSingle();
+        const existing=(remote && remote.data)?remote.data:{};
+        existing[`circ:${date}:${k}`] = ii.value ? String(ii.value) : null;
+        Object.keys(existing).forEach(x=>{ if(existing[x]==null) delete existing[x]; });
+        if(Object.keys(existing).length===0) await sb.from('daily_data').delete().eq('user_id',user.id).eq('ymd',date);
+        else await sb.from('daily_data').upsert({ user_id:user.id, ymd:date, data:existing, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' });
+        await syncLoadFor(vd);
+      };
+      cc.appendChild(ii); r.appendChild(cc); r.appendChild(document.createElement('div')); healthGrid.appendChild(r);
     });
   }
 }
 
-/* simple weekly mini-card update (weights/circ spark placeholders) */
-function renderHealthWeeklyCard(){
-  // this function updates small stats in the UI (not full graphs)
-  // we keep it minimal here
+/* ============ Cloud load/save ============ */
+async function syncLoadFor(d){
+  const userResp = await sb.auth.getUser();
+  const user = userResp.data?.user || null;
+  const vd = d || getViewDate();
+  if(!user){
+    // unauthenticated: show empty UI
+    renderSchedule({});
+    renderNutrition({});
+    renderDailyGoals({});
+    renderWeeklyGoals({});
+    renderStates({});
+    renderHealth({});
+    document.getElementById('weeklySection').style.display = (vd.getDay()===0)?'block':'none';
+    logoutBtn.style.display='none'; whoami.textContent='';
+    return;
+  }
+  logoutBtn.style.display='inline-flex'; whoami.textContent = '• '+(user.email||user.id);
+
+  const date = ymd(vd), week = isoWeek(vd);
+  const { data: drow } = await sb.from('daily_data').select('data').eq('user_id',user.id).eq('ymd',date).maybeSingle();
+  const { data: wrow } = await sb.from('weekly_data').select('data').eq('user_id',user.id).eq('week_id',week).maybeSingle();
+
+  const dailyMap = (drow && drow.data)? drow.data : {};
+  const weeklyMap = (wrow && wrow.data)? wrow.data : {};
+
+  // render UI
+  renderSchedule(dailyMap);
+  renderNutrition(dailyMap);
+  renderDailyGoals(dailyMap);
+  renderWeeklyGoals(weeklyMap);
+  renderStates(dailyMap);
+  renderHealth(dailyMap);
+  document.getElementById('weeklySection').style.display = (vd.getDay()===0)?'block':'none';
 }
 
-/* ================ EXPORT / IMPORT ================= */
-document.getElementById('exportBtn').onclick = ()=>{
-  const data = {};
-  for(let i=0;i<localStorage.length;i++){
-    const k = localStorage.key(i);
-    if(!k) continue;
-    if(k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k.startsWith('state:')||k.startsWith('metric:')||k.startsWith('circ:')||k==='theme'||k==='wakeTime'||k==='sleepTime'){
-      data[k] = localStorage.getItem(k);
-    }
-  }
-  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'tracker-backup.json'; a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
+/* save full day via reload (we rely on immediate saves in handlers; this triggers reload) */
+async function saveFullDay(){ await syncLoadFor(getViewDate()); alert('Синхронизировано'); }
+
+/* Export/Import (JSON) */
+document.getElementById('exportBtn').onclick = async ()=>{
+  const userResp = await sb.auth.getUser();
+  const user = userResp.data?.user || null;
+  if(!user) return alert('Войдите для экспорта');
+  const { data } = await sb.from('daily_data').select('ymd,data').eq('user_id',user.id);
+  const { data: wdata } = await sb.from('weekly_data').select('week_id,data').eq('user_id',user.id);
+  const out = { daily: data || [], weekly: wdata || [] };
+  const blob = new Blob([JSON.stringify(out,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='tracker-export.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
 document.getElementById('importInput').onchange = async (e)=>{
-  const file = e.target.files[0]; if(!file) return;
-  const text = await file.text();
-  try{
-    const data = JSON.parse(text);
-    Object.entries(data).forEach(([k,v])=>{
-      if(k.startsWith('day:')||k.startsWith('goal:')||k.startsWith('wgoal:')||k.startsWith('n:')||k.startsWith('state:')||k.startsWith('metric:')||k.startsWith('circ:')||k==='theme'||k==='wakeTime'||k==='sleepTime'){
-        localStorage.setItem(k,String(v));
-      }
-    });
-    applyTheme(localStorage.getItem('theme')||'dark');
-    loadTimes(); renderAll();
-    alert('Импорт завершён ✅');
-    scheduleSave();
-  }catch(err){
-    alert('Ошибка импорта: '+err.message);
-  }
+  const f = e.target.files[0]; if(!f) return;
+  const txt = await f.text(); try{ const obj=JSON.parse(txt); const userResp = await sb.auth.getUser(); const user = userResp.data?.user || null; if(!user) return alert('Войдите для импорта');
+    // import daily
+    for(const row of obj.daily||[]){ if(row.ymd && row.data) await sb.from('daily_data').upsert({ user_id:user.id, ymd:row.ymd, data:row.data, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' }); }
+    for(const row of obj.weekly||[]){ if(row.week_id && row.data) await sb.from('weekly_data').upsert({ user_id:user.id, week_id:row.week_id, data:row.data, updated_at:new Date().toISOString() }, { onConflict:'user_id,week_id' }); }
+    await syncLoadFor(getViewDate()); alert('Импорт завершён');
+  }catch(err){ alert('Ошибка импорта: '+err.message); }
 };
 
-/* ================ RESET DAY (очищает ВСЁ за дату) ================= */
-document.getElementById('resetDayBtn').onclick = ()=>{
-  if(!confirm('Очистить все данные за текущий день?')) return;
-  const vd = getViewDate();
-  const prefixList = [ `day:${ymd(vd)}`, `goal:${ymd(vd)}`, `n:${ymd(vd)}`, `state:${ymd(vd)}`, `metric:${ymd(vd)}`, `circ:${ymd(vd)}`, `alpha:${ymd(vd)}` ];
-  const toRemove = [];
-  for(let i=0;i<localStorage.length;i++){
-    const k = localStorage.key(i);
-    if(!k) continue;
-    if(prefixList.some(p => k.startsWith(p))) toRemove.push(k);
-  }
-  toRemove.forEach(k=>localStorage.removeItem(k));
-  renderAll();
-  scheduleSave();
-};
-
-/* ================ SAVE BUTTON (форс сохранение на сервер) ================= */
-document.getElementById('saveNearBtn').onclick = ()=> syncSaveFor(getViewDate());
-
-/* ================ PWA — omitted (to avoid permission issues) ================= */
-
-/* ================ Supabase SYNC HELPERS ================= */
-async function sbGetUser(){ try{ const r = await sb.auth.getUser(); return r.data?.user || null; }catch(e){ return null; } }
-
-// Collect all local keys for a date (daily)
-function collectLocalForDate(d){
-  const s = ymd(d);
-  const out = {};
-  for(let i=0;i<localStorage.length;i++){
-    const k = localStorage.key(i); if(!k) continue;
-    if(k.startsWith(`day:${s}`) || k.startsWith(`goal:${s}`) || k.startsWith(`n:${s}`) || k.startsWith(`state:${s}`) || k.startsWith(`metric:${s}`) || k.startsWith(`circ:${s}`)){
-      out[k] = localStorage.getItem(k);
-    }
-  }
-  return out;
-}
-
-// collect weekly keys by week id
-function collectLocalWeekly(weekId){
-  const out = {};
-  for(let i=0;i<localStorage.length;i++){
-    const k = localStorage.key(i); if(!k) continue;
-    if(k.startsWith(`wgoal:${weekId}:`)) out[k] = localStorage.getItem(k);
-  }
-  return out;
-}
-
-// Replace local keys for the date with the map (cloud authoritative)
-function applyDataMap(map){
-  // clear existing local keys for that day first
-  Object.entries(map||{}).forEach(([k,v]) => {
-    try{ localStorage.setItem(k, v); }catch(e){}
-  });
-}
-
-// Clear local keys for a day (used before applying cloud data)
-function clearLocalForDate(d){
-  const s = ymd(d);
-  const toRem = [];
-  for(let i=0;i<localStorage.length;i++){
-    const k = localStorage.key(i); if(!k) continue;
-    if(k.startsWith(`day:${s}`) || k.startsWith(`goal:${s}`) || k.startsWith(`n:${s}`) || k.startsWith(`state:${s}`) || k.startsWith(`metric:${s}`) || k.startsWith(`circ:${s}`) || k.startsWith(`alpha:${s}`)){
-      toRem.push(k);
-    }
-  }
-  toRem.forEach(k=>localStorage.removeItem(k));
-}
-
-// load from server for specific date and week (cloud overwrites local; if no row on cloud -> local cleared)
-async function syncLoadFor(d){
-  const user = await sbGetUser(); if(!user) return;
-  const s = ymd(d);
-  const w = isoWeek(d);
-  // daily
-  const { data: drow } = await sb.from('daily_data').select('data').eq('user_id', user.id).eq('ymd', s).maybeSingle();
-  clearLocalForDate(d); // cloud authoritative: clear local first
-  if(drow?.data) applyDataMap(drow.data);
-  // weekly
-  const { data: wrow } = await sb.from('weekly_data').select('data').eq('user_id', user.id).eq('week_id', w).maybeSingle();
-  if(wrow?.data) Object.entries(wrow.data).forEach(([k,v])=> localStorage.setItem(k,v));
-  renderAll();
-}
-
-// save local -> cloud (upsert)
-async function syncSaveFor(d){
-  const user = await sbGetUser(); if(!user) return alert('Войдите, чтобы синхронизировать');
-  const s = ymd(d), w = isoWeek(d);
-  const daily = collectLocalForDate(d);
-  const weekly = collectLocalWeekly(w);
-  if(Object.keys(daily).length){
-    await sb.from('daily_data').upsert({ user_id:user.id, ymd:s, data: daily, updated_at:new Date().toISOString() }, { onConflict:'user_id,ymd' });
-  } else {
-    // delete remote if exists and local empty
-    await sb.from('daily_data').delete().eq('user_id', user.id).eq('ymd', s);
-  }
-  if(Object.keys(weekly).length){
-    await sb.from('weekly_data').upsert({ user_id:user.id, week_id:w, data: weekly, updated_at:new Date().toISOString() }, { onConflict:'user_id,week_id' });
-  } else {
-    await sb.from('weekly_data').delete().eq('user_id', user.id).eq('week_id', w);
-  }
-}
-
-/* realtime subscribe to server changes (updates when other session modifies data) */
+/* realtime */
 try{
-  sb.channel('changes')
-    .on('postgres_changes',{event:'*',schema:'public',table:'daily_data'}, payload => {
-      // if change relates to current user's day — reload
-      syncLoadFor(getViewDate()).catch(()=>{});
-    })
-    .on('postgres_changes',{event:'*',schema:'public',table:'weekly_data'}, payload => {
-      syncLoadFor(getViewDate()).catch(()=>{});
-    })
+  sb.channel('app-changes')
+    .on('postgres_changes',{event:'*',schema:'public',table:'daily_data'},()=>syncLoadFor(getViewDate()).catch(()=>{}))
+    .on('postgres_changes',{event:'*',schema:'public',table:'weekly_data'},()=>syncLoadFor(getViewDate()).catch(()=>{}))
     .subscribe();
-}catch(e){ console.warn('Realtime not available', e); }
+}catch(e){ console.warn('Realtime not available',e); }
 
-/* debounced local auto-save scheduling */
-let saveTimer;
-function scheduleSave(){
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(()=> syncSaveFor(getViewDate()).catch(()=>{}), 900);
-}
+/* navigation */
+document.getElementById('prevWeekBtn').onclick = ()=>{ viewWeekStart = addDays(viewWeekStart,-7); renderAll(); syncLoadFor(getViewDate()).catch(()=>{}); };
+document.getElementById('nextWeekBtn').onclick = ()=>{ viewWeekStart = addDays(viewWeekStart,7); renderAll(); syncLoadFor(getViewDate()).catch(()=>{}); };
 
-/* ================ AUTH UI ================= */
-const emailInput = document.getElementById('emailInput');
-const loginBtn = document.getElementById('loginBtn');
-const logoutBtn = document.getElementById('logoutBtn');
-const whoami = document.getElementById('whoami');
+/* auth state on load */
+sb.auth.onAuthStateChange(async (_e, session)=>{ const user = session?.user || null; if(user){ logoutBtn.style.display='inline-flex'; whoami.textContent='• '+(user.email||user.id); await syncLoadFor(getViewDate()); } else { logoutBtn.style.display='none'; whoami.textContent=''; await syncLoadFor(getViewDate()); } });
 
-loginBtn.onclick = async ()=>{
-  const email = emailInput.value.trim();
-  if(!email) return alert('Введи email');
-  try{
-    const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } });
-    if(error) alert('Ошибка входа: '+error.message);
-    else alert('Письмо со ссылкой отправлено на email.');
-  }catch(err){
-    alert('Ошибка сети: '+err.message);
-  }
-};
+/* theme */
+document.getElementById('themeBtn').onclick = ()=>{ const cur=document.documentElement.getAttribute('data-theme'); document.documentElement.setAttribute('data-theme', cur==='dark'?'light':'dark'); localStorage.setItem('theme', document.documentElement.getAttribute('data-theme')); };
+document.documentElement.setAttribute('data-theme', localStorage.getItem('theme')||'dark');
 
-logoutBtn.onclick = async ()=>{
-  await sb.auth.signOut();
-  location.reload();
-};
-
-sb.auth.onAuthStateChange(async (_ev, session)=>{
-  const user = session?.user;
-  logoutBtn.style.display = user ? 'inline-flex' : 'none';
-  whoami.textContent = user ? ('• '+(user.email||user.id)) : '';
-  if(user) await syncLoadFor(getViewDate());
-});
-
-/* load initial auth state */
-(async ()=>{
-  const r = await sb.auth.getSession();
-  const user = r.data?.session?.user || null;
-  logoutBtn.style.display = user ? 'inline-flex' : 'none';
-  whoami.textContent = user ? ('• '+(user.email||user.id)) : '';
-})();
-
-/* ================ RENDER ALL ================= */
-function toggleWeeklyVisibility(){
-  const sec = document.getElementById('weeklySection');
-  sec.style.display = (getViewDate().getDay() === 0) ? 'block' : 'none';
-}
-
-function renderAll(){
-  renderTabs();
-  renderSchedule();
-  renderNutrition();
-  renderDailyGoals();
-  renderWeeklyGoals();
-  renderStates();
-  renderHealth();
-  updateProgress();
-  toggleWeeklyVisibility();
-}
-
-/* init */
-document.getElementById('prevWeekBtn').onclick = ()=>{ viewWeekStart = addDays(viewWeekStart, -7); renderAll(); syncLoadFor(getViewDate()).catch(()=>{}); };
-document.getElementById('nextWeekBtn').onclick = ()=>{ viewWeekStart = addDays(viewWeekStart, 7); renderAll(); syncLoadFor(getViewDate()).catch(()=>{}); };
-
-function loadTimes(){
-  const w = localStorage.getItem('wakeTime') || '06:00', s = localStorage.getItem('sleepTime') || '22:30';
-  document.getElementById('sleepPill').textContent = `Сон: ${s} → ${w} (≈7–8 ч)`;
-}
-function applyTheme(t){ document.documentElement.setAttribute('data-theme', t); localStorage.setItem('theme', t); }
-document.getElementById('themeBtn').onclick = ()=> applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
-applyTheme(localStorage.getItem('theme')||'dark');
+/* button bindings */
+saveAllBtn.onclick = saveFullDay;
 
 /* initial render */
-loadTimes();
-renderAll();
+renderTabs();
+syncLoadFor(getViewDate()).catch(()=>{});
 
-/* keyboard navigation (optional) */
-document.addEventListener('keyup',(e)=>{
-  if(e.key==='ArrowLeft'){ currentDay = (currentDay+6)%7; renderAll(); syncLoadFor(getViewDate()).catch(() => {}); }
-  if(e.key==='ArrowRight'){ currentDay = (currentDay+1)%7; renderAll(); syncLoadFor(getViewDate()).catch(() => {}); }
-});
+function renderAll(){ syncLoadFor(getViewDate()).catch(()=>{}); }
 </script>
 </body>
 </html>
-
