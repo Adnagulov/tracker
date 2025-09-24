@@ -1,197 +1,91 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Графики — Трекер</title>
-  <style>
-    :root{
-      --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb;
-      --accent:#22c55e; --accent2:#3b82f6; --border:#1f2937; --chip-bg:#0b1222;
-    }
-    [data-theme="light"]{
-      --bg:#f7fafc; --card:#ffffff; --muted:#4b5563; --text:#0f172a; --border:#e5e7eb; --chip-bg:#eef2ff;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Inter,Arial,sans-serif}
-    header{border-bottom:1px solid var(--border);background:var(--bg)}
-    .wrap{max-width:1024px;margin:0 auto;padding:16px}
-    h1{margin:0 0 6px;font-size:26px}
-    .sub{color:var(--muted);font-size:13px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;margin:12px 0}
-    .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--chip-bg);color:var(--text);cursor:pointer;font-weight:700}
-    .btn.primary{background:var(--accent2);color:#fff}
-    .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);padding:6px 10px;border-radius:999px;background:#0b1024;font-size:12px}
-    [data-theme="light"] .pill{background:#f1f5f9}
-    canvas{width:100%;max-height:360px}
-  </style>
-
-  <!-- Chart.js (UMD) + date adapter -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
-
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const SUPABASE_URL = "https://afxbyrypaqnobaalipjm.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_vROzTIfTCdtiea3xfMCcHA_bthD-zZr";
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  </script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Графики</title>
+<style>
+ body{margin:0;font-family:Inter,system-ui;background:#0f172a;color:#e6eef8;padding:12px}
+ .wrap{max-width:980px;margin:0 auto}
+ .card{background:#0d1320;border:1px solid #1f2937;padding:12px;border-radius:10px;margin-bottom:12px}
+ canvas{width:100%!important;height:260px!important}
+ .small{font-size:13px;color:#94a3b8}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-<header>
-  <div class="wrap flex" style="justify-content:space-between;align-items:flex-start">
-    <div>
-      <h1>Графики</h1>
-      <div class="sub">Вес и замеры (живот, бицепс, квадрицепс) • синхронизация с облаком</div>
-    </div>
-    <div class="flex">
-      <a class="btn" href="./index.html">← Назад</a>
-      <button class="btn" id="themeBtn">🌙/☀️</button>
-      <button class="btn primary" id="refreshBtn">Обновить из облака</button>
-    </div>
-  </div>
-</header>
-
-<main class="wrap">
-  <section class="card flex">
-    <span class="pill">Период:</span>
-    <button class="btn" data-range="30">30 дней</button>
-    <button class="btn" data-range="90">90</button>
-    <button class="btn" data-range="180">180</button>
-    <button class="btn" data-range="365">365</button>
-  </section>
-
-  <section class="card">
-    <div class="flex" style="justify-content:space-between">
-      <div class="pill">Вес (кг) + целевой график</div>
-      <div class="sub" id="lastWeight">—</div>
-    </div>
-    <canvas id="chartWeight"></canvas>
-  </section>
-
-  <section class="card">
-    <div class="pill">Объём живота (см)</div>
-    <canvas id="chartWaist"></canvas>
-  </section>
-
-  <section class="card">
-    <div class="pill">Объём бицепса (см)</div>
-    <canvas id="chartBiceps"></canvas>
-  </section>
-
-  <section class="card">
-    <div class="pill">Объём квадрицепса (см)</div>
-    <canvas id="chartQuad"></canvas>
-  </section>
-</main>
+<div class="wrap">
+  <div class="card"><h2 style="margin:0">Графики</h2><div class="small">Вес и объёмы (данные из Supabase)</div></div>
+  <div class="card"><h3>Вес (факт vs цель)</h3><canvas id="weightChart"></canvas></div>
+  <div class="card"><h3>Объём живота</h3><canvas id="waistChart"></canvas></div>
+  <div class="card"><h3>Объём бицепса</h3><canvas id="bicepsChart"></canvas></div>
+  <div class="card"><h3>Объём квадрицепса</h3><canvas id="quadChart"></canvas></div>
+  <div class="card"><a href="index.html" class="small">← Вернуться</a></div>
+</div>
 
 <script>
-/* ===== Тема ===== */
-const root=document.documentElement;
-function applyTheme(t){ root.setAttribute('data-theme',t); localStorage.setItem('theme',t); }
-applyTheme(localStorage.getItem('theme')||'dark');
-document.getElementById('themeBtn').onclick=()=>applyTheme(root.getAttribute('data-theme')==='dark'?'light':'dark');
+/* Supabase config */
+const SUPABASE_URL = "https://afxbyrypaqnobaalipjm.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_vROzTIfTCdtiea3xfMCcHA_bthD-zZr";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* ===== Утилиты ===== */
-function ymd(d){ return d.toISOString().slice(0,10); }
-function daysAgo(n){ const d=new Date(); d.setDate(d.getDate()-n); d.setHours(0,0,0,0); return d; }
-
-/* ===== Целевой вес ===== */
-const targetPoints = [
+/* Target plan (ваши данные) */
+const TARGET = [
   ['2025-09-17',97],['2025-09-23',95.9],['2025-09-30',94.7],['2025-10-07',93.6],
   ['2025-10-14',92.5],['2025-10-21',91.3],['2025-10-28',90.2],['2025-11-04',89.1],
   ['2025-11-11',87.9],['2025-11-18',86.8],['2025-11-25',85.7],['2025-12-02',84.5],
-  ['2025-12-09',83.4],['2025-12-16',82.3],['2025-12-23',81.1],['2025-12-30',80]
-].map(([d,v])=>({x:new Date(d), y:Number(String(v).replace(',','.'))}));
+  ['2025-12-09',83.4],['2025-12-16',82.3],['2025-12-23',81.1],['2025-12-30',80.0]
+];
 
-/* ===== Сбор локальных данных ===== */
-function collectLocal(range){
-  const from=daysAgo(range);
-  const m = {weight:new Map(), waist:new Map(), biceps:new Map(), quad:new Map()};
-  for(let i=0;i<localStorage.length;i++){
-    const k=localStorage.key(i); if(!k) continue;
-    if(!/^metric:|^circ:/.test(k)) continue;
-    const parts=k.split(':'); const ds=parts[1]; const dt=new Date(ds); if(dt<from) continue;
-    const v=Number(localStorage.getItem(k)); if(!isFinite(v)) continue;
-    if(parts[0]==='metric' && parts[2]==='weight') m.weight.set(ds,v);
-    if(parts[0]==='circ'){
-      if(parts[2]==='waist')  m.waist.set(ds,v);
-      if(parts[2]==='biceps') m.biceps.set(ds,v);
-      if(parts[2]==='quad')   m.quad.set(ds,v);
-    }
-  }
-  return m;
-}
-
-/* ===== Сбор из Supabase ===== */
-async function collectCloud(range){
-  const out={weight:new Map(), waist:new Map(), biceps:new Map(), quad:new Map()};
-  try{
-    const {data:{user}}=await sb.auth.getUser(); if(!user) return out;
-    const from=ymd(daysAgo(range)), to=ymd(new Date());
-    const {data, error}=await sb.from('daily_data').select('ymd,data').eq('user_id',user.id).gte('ymd',from).lte('ymd',to).order('ymd');
-    if(error) return out;
-    for(const row of (data||[])){
-      const ds=row.ymd; const payload=row.data||{};
-      const w=`metric:${ds}:weight`, cw=`circ:${ds}:waist`, cb=`circ:${ds}:biceps`, cq=`circ:${ds}:quad`;
-      if(payload[w]!=null)  out.weight.set(ds, Number(payload[w]));
-      if(payload[cw]!=null) out.waist.set(ds,  Number(payload[cw]));
-      if(payload[cb]!=null) out.biceps.set(ds, Number(payload[cb]));
-      if(payload[cq]!=null) out.quad.set(ds,   Number(payload[cq]));
-    }
-  }catch{}
-  return out;
-}
-function mergeSeries(loc, cloud){
-  const m=new Map(loc); for(const [k,v] of cloud.entries()) if(!m.has(k)) m.set(k,v);
-  return Array.from(m.entries()).sort((a,b)=>a[0]<b[0]?-1:1).map(([ds,v])=>({x:new Date(ds), y:v}));
-}
-
-/* ===== Чарты ===== */
-let chartW, chartWaist, chartBiceps, chartQuad, range=180;
-function mkChart(ctx,label,data,color){
-  return new Chart(ctx,{
-    type:'line',
-    data:{datasets:[{label,data,borderColor:color,backgroundColor:'transparent',tension:.25,pointRadius:2}]},
-    options:{responsive:true, scales:{x:{type:'time',time:{unit:'day'}}, y:{beginAtZero:false}}, plugins:{legend:{display:true}}}
+/* collect series from daily_data for current user */
+async function collectSeries(){
+  const u = (await sb.auth.getUser()).data?.user;
+  const labels = TARGET.map(t=>t[0]);
+  const targetVals = TARGET.map(t=>t[1]);
+  if(!u) return { labels, target: targetVals, weightActual:labels.map(()=>null), waist:labels.map(()=>null), biceps:labels.map(()=>null), quad:labels.map(()=>null) };
+  const { data } = await sb.from('daily_data').select('ymd,data').eq('user_id',u.id);
+  const map = {};
+  (data||[]).forEach(row=>{
+    const d = row.ymd;
+    const obj = row.data || {};
+    Object.entries(obj).forEach(([k,v])=>{
+      map[k] = v;
+    });
   });
+  const weightActual = labels.map(lbl => { const k=`metric:${lbl}:weight`; return map[k] ? Number(map[k]) : null; });
+  const waist = labels.map(lbl => { const k=`circ:${lbl}:waist`; return map[k] ? Number(map[k]) : null; });
+  const biceps = labels.map(lbl => { const k=`circ:${lbl}:biceps`; return map[k] ? Number(map[k]) : null; });
+  const quad = labels.map(lbl => { const k=`circ:${lbl}:quad`; return map[k] ? Number(map[k]) : null; });
+  return { labels, target: targetVals, weightActual, waist, biceps, quad };
 }
-function addTarget(chart,label,data){
-  chart.data.datasets.push({label,data,borderColor:'#94a3b8',backgroundColor:'transparent',borderDash:[6,6],pointRadius:0,tension:0});
-  chart.update();
+
+/* Chart helper */
+function mkLine(ctx, labels, datasets){
+  return new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets },
+    options:{
+      responsive:true,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:true}},
+      scales:{ y:{ beginAtZero:false } }
+    }
+  });
 }
 
 async function renderCharts(){
-  const loc=collectLocal(range); const cloud=await collectCloud(range);
-  const sW=mergeSeries(loc.weight,cloud.weight);
-  const sWaist=mergeSeries(loc.waist,cloud.waist);
-  const sBiceps=mergeSeries(loc.biceps,cloud.biceps);
-  const sQuad=mergeSeries(loc.quad,cloud.quad);
-
-  document.getElementById('lastWeight').textContent = sW.length?`последний: ${sW[sW.length-1].y} кг`:'данных пока нет';
-
-  [chartW,chartWaist,chartBiceps,chartQuad].forEach(ch=>{ try{ch?.destroy();}catch{} });
-
-  chartW      = mkChart(document.getElementById('chartWeight'), 'Вес',        sW,     '#3b82f6'); addTarget(chartW,'Целевой вес',targetPoints);
-  chartWaist  = mkChart(document.getElementById('chartWaist'),  'Живот',      sWaist, '#22c55e');
-  chartBiceps = mkChart(document.getElementById('chartBiceps'), 'Бицепс',     sBiceps,'#f59e0b');
-  chartQuad   = mkChart(document.getElementById('chartQuad'),   'Квадрицепс', sQuad,  '#ef4444');
+  const s = await collectSeries();
+  const labels = s.labels;
+  mkLine(document.getElementById('weightChart').getContext('2d'), labels, [
+    { label:'Фактический вес', data: s.weightActual, borderColor:'#3b82f6', fill:false, tension:0.2, spanGaps:true },
+    { label:'Целевой вес', data: s.target, borderColor:'#ef4444', borderDash:[6,4], fill:false, tension:0.2 }
+  ]);
+  mkLine(document.getElementById('waistChart').getContext('2d'), labels, [{label:'Живот (см)',data:s.waist,borderColor:'#34d399',fill:false,spanGaps:true}]);
+  mkLine(document.getElementById('bicepsChart').getContext('2d'), labels, [{label:'Бицепс (см)',data:s.biceps,borderColor:'#60a5fa',fill:false,spanGaps:true}]);
+  mkLine(document.getElementById('quadChart').getContext('2d'), labels, [{label:'Квадрицепс (см)',data:s.quad,borderColor:'#f59e0b',fill:false,spanGaps:true}]);
 }
 
-/* ===== UI ===== */
-document.querySelectorAll('[data-range]').forEach(b=>{ b.onclick=()=>{ range=Number(b.dataset.range)||180; renderCharts(); }; });
-document.getElementById('refreshBtn').onclick=renderCharts;
-
-/* magic-link: обмен + очистка URL */
-(async ()=>{
-  try{ try{ await sb.auth.exchangeCodeForSession(window.location.href);}catch(_){} 
-    if (/[?#].*(access_token|refresh_token|code)=/i.test(location.href)) {
-      const u=new URL(location.href); history.replaceState({},document.title,`${u.origin}${u.pathname}`);
-    }
-  }catch{}
-})();
 renderCharts();
 </script>
 </body>
